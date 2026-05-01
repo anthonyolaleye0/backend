@@ -76,7 +76,15 @@ export class MailProcessor {
     let template = this.templateCache.get(templateName);
 
     if (!template) {
-      const filePath = join(__dirname, '..', 'templates', templateName);
+      // const filePath = join(__dirname, '..', 'templates', templateName);
+
+      const filePath = join(
+        process.cwd(),
+        'dist',
+        'src',
+        'templates',
+        templateName,
+      );
 
       console.log('filePath:', filePath);
 
