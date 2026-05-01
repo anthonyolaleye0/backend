@@ -53,7 +53,7 @@ import { UsersModule } from './modules/users/users.module';
               console.log('🔄 MongoDB reconnected...');
             });
 
-            connection.on('error', (error) => {
+            connection.on('error', (error: Error) => {
               console.error('MongoDB connection error:', error);
             });
 

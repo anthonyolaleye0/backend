@@ -1,6 +1,5 @@
-import { BadRequestException, NotAcceptableException } from '@nestjs/common';
+import { NotAcceptableException } from '@nestjs/common';
 import parsePhoneNumberFromString from 'libphonenumber-js';
-import { customAlphabet } from 'nanoid';
 
 export const normalizePhoneNumber = (phoneNumber: string) => {
   const parsed = parsePhoneNumberFromString(phoneNumber, 'NG');
@@ -16,27 +15,17 @@ export const normalizePhoneNumber = (phoneNumber: string) => {
   return parsed.number;
 };
 
-export const generateRefCode = (): string => {
+// export const generateRefCode = (): string => {
+//   const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTVWXYZ0123456789', 8);
+
+//   const code = `AT-${nanoid()}`;
+//   return code;
+// };
+
+export const generateRefCode = async (): Promise<string> => {
+  // Dynamic import
+  const { customAlphabet } = await import('nanoid');
   const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTVWXYZ0123456789', 8);
 
-  const code = `AT-${nanoid()}`;
-  return code;
-};
-
-export const generatePaymentReference = (payload) => {
-  const { userId, plan } = payload;
-
-  console.log('payload:', payload);
-
-  if (!userId || !plan) {
-    throw new BadRequestException({
-      message: 'User ID and plan are required.',
-      success: false,
-      status: 400,
-    });
-  }
-
-  const ref = `PAYMENT_${plan}_${userId}_${Date.now()}`;
-
-  return ref;
+  return `AT-${nanoid()}`;
 };
