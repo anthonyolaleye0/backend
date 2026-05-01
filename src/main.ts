@@ -135,7 +135,6 @@ async function bootstrap() {
     );
   });
 }
-console.log('App starting...');
 bootstrap().catch((error) => {
   Logger.error('Error starting server:', error);
   process.exit(1);
