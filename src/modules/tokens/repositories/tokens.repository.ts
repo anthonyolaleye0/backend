@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Token, TokenDocument } from '../schemas/token.schema';
+import { Token, TokenDocument, TokenPurpose } from '../schemas/token.schema';
 
 @Injectable()
 export class TokensRepository {
@@ -14,14 +14,14 @@ export class TokensRepository {
     return this.tokenModel.findById(id);
   }
 
-  async findOneByUserIdAndPurpose(userId: Types.ObjectId, purpose: string) {
+  async findOneByUserIdAndPurpose(userId: Types.ObjectId, purpose: TokenPurpose) {
     return this.tokenModel.findOne({
       user: userId,
       purpose,
     });
   }
 
-  async findOne(token: string, purpose: string) {
+  async findOne(token: string, purpose: TokenPurpose) {
     return this.tokenModel.findOne({
       token,
       purpose,

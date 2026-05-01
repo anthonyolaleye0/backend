@@ -2295,7 +2295,7 @@ This allows the user to see the structure and click where they want to go.
   async findProcessingLaw(targetId: string) {
     return await this.taxLawModel.findOne({
       _id: targetId,
-      status: 'PROCESSING',
+      status: TaxLawStatus.PROCESSING
     });
   }
 
