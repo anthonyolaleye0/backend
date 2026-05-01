@@ -2295,7 +2295,7 @@ This allows the user to see the structure and click where they want to go.
   async findProcessingLaw(targetId: string) {
     return await this.taxLawModel.findOne({
       _id: targetId,
-      status: TaxLawStatus.PROCESSING
+      status: TaxLawStatus.PROCESSING,
     });
   }
 
@@ -3585,8 +3585,6 @@ This allows the user to see the structure and click where they want to go.
     queryWithPaginationDto: QueryWithPaginationDto,
   ) {
     const { page = 1, limit = 10, searchParams } = queryWithPaginationDto;
-    console.log('page:', page);
-    console.log('limit:', limit);
 
     const skip = (page - 1) * limit;
     const id = new Types.ObjectId(taxLawId);

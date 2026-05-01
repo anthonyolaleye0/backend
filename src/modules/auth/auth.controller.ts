@@ -110,8 +110,9 @@ export class AuthController {
     description: 'Internal server error',
   })
   async loginUser(@Body() loginDto: LoginDto) {
-    const response = await this.authService.loginUser(loginDto);
-    return response;
+    const res = await this.authService.loginUser(loginDto);
+    console.log('controller res:', res);
+    return res;
   }
 
   @Post('forgot-password')

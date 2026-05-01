@@ -132,9 +132,9 @@ export class AuthService {
     const user = await this.usersRepository.findByEmail(email);
 
     if (!user || user === null) {
-      throw new UnauthorizedException({
+      throw new BadRequestException({
         message: 'Invalid credentials.',
-        status: 401,
+        status: 400,
         success: false,
       });
     }
@@ -142,18 +142,18 @@ export class AuthService {
     const hash = user?.password;
 
     if (!hash) {
-      throw new UnauthorizedException({
+      throw new BadRequestException({
         message: 'Invalid credentials',
         success: false,
-        status: 401,
+        status: 400,
       });
     }
     const passwordMatch = await this.comaparePassword(password, hash);
 
     if (passwordMatch !== true) {
-      throw new UnauthorizedException({
+      throw new BadRequestException({
         message: 'Invalid credentials.',
-        status: 401,
+        status: 400,
         success: false,
       });
     }
@@ -179,9 +179,9 @@ export class AuthService {
         token.token,
       );
 
-      throw new UnauthorizedException({
+      throw new BadRequestException({
         message: `${user.firstName} ${user.lastName}, Please verify your email to proceed.`,
-        status: 401,
+        status: 400,
         success: false,
       });
     } else {
