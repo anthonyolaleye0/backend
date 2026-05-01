@@ -122,8 +122,6 @@ export class MailProcessor {
 
         console.log('Email response:', info);
       }
-
-      console.log(`Email sent to ${to}`);
     } catch (error) {
       console.error('Email sending failed:', error);
       throw error;
