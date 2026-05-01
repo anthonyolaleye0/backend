@@ -7,29 +7,29 @@ export class TokenResponseDto {
     description: 'Token id',
     example: '2019284jfh830982dh38',
   })
-  _id: Types.ObjectId;
+  _id!: Types.ObjectId;
 
   @ApiProperty({
     description: 'Token purpose. What the token is meant for.',
     example: 'EMAIL_VERIFICATION',
   })
-  purpose: TokenPurpose;
+  purpose!: TokenPurpose;
 
   @ApiProperty({
     description: 'The actual token',
     example: '102938',
   })
-  token: string;
+  token!: string;
 
   @ApiProperty({
     description: 'ID of the user that the token is generated for.',
     example: '1029384fheyj458kf472hsy32345',
   })
-  user: Types.ObjectId;
+  user!: Types.ObjectId;
 
   @ApiProperty({
     description: 'The time that the token will expire.',
     example: '15 mins',
   })
-  expiresAt: Date;
+  expiresAt!: Date;
 }

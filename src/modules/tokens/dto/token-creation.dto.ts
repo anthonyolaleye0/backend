@@ -7,11 +7,11 @@ export class TokenCreationDto {
     description: 'user ID',
     example: '1029382719',
   })
-  userId: Types.ObjectId;
+  userId!: Types.ObjectId;
 
   @ApiProperty({
     description: 'Token purpose',
     example: 'EMAIL_VERIFICATION',
   })
-  purpose: TokenPurpose;
+  purpose!: TokenPurpose;
 }
