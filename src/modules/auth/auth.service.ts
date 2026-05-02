@@ -41,7 +41,7 @@ export class AuthService {
     const { firstName, lastName, email, password, whatsappPhoneNumber } =
       registerUserDto;
 
-    const userExist = await this.usersRepository.findByEmail(email);
+    const userExist = await this.usersRepository.findByEmail(email?.trim());
 
     if (userExist) {
       throw new ConflictException({
@@ -51,12 +51,12 @@ export class AuthService {
       });
     }
 
-    const hashed = await this.passwordHashing(password);
+    const hashed = await this.passwordHashing(password?.trim());
 
     const payload = {
-      firstName,
-      lastName,
-      email,
+      firstName: firstName?.trim(),
+      lastName: lastName?.trim(),
+      email: email?.trim(),
       whatsappPhoneNumber,
       password: hashed,
     };
@@ -129,7 +129,7 @@ export class AuthService {
   async loginUser(loginDto: LoginDto): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
 
-    const user = await this.usersRepository.findByEmail(email);
+    const user = await this.usersRepository.findByEmail(email?.trim());
 
     if (!user || user === null) {
       throw new BadRequestException({
@@ -148,7 +148,7 @@ export class AuthService {
         status: 400,
       });
     }
-    const passwordMatch = await this.comaparePassword(password, hash);
+    const passwordMatch = await this.comaparePassword(password?.trim(), hash);
 
     if (passwordMatch !== true) {
       throw new BadRequestException({
