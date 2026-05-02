@@ -128,6 +128,10 @@ async function bootstrap() {
       `,
   });
 
+  app.getHttpAdapter().get('api/docs-json', (req, res) => {
+    res.json(document);
+  });
+
   await app.listen(port, () => {
     console.log(`Server listening on port: ${port}`);
     console.log(

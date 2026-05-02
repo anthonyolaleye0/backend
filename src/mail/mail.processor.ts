@@ -1,5 +1,4 @@
 import { Process, Processor } from '@nestjs/bull';
-import { NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Job } from 'bull';
 import * as ejs from 'ejs';
@@ -59,37 +58,11 @@ export class MailProcessor {
   //   return template;
   // }
 
-  // private getTemplate(templateName: string): string {
-  //   let template = this.templateCache.get(templateName);
-
-  //   if (!template) {
-  //     const filePath = join(__dirname, '../templates', templateName);
-
-  //     template = fs.readFileSync(filePath, 'utf-8');
-  //     this.templateCache.set(templateName, template);
-  //   }
-
-  //   return template;
-  // }
-
   private getTemplate(templateName: string): string {
     let template = this.templateCache.get(templateName);
 
     if (!template) {
-      // const filePath = join(__dirname, '..', 'templates', templateName);
-
-      const filePath = join(process.cwd(), 'dist', 'templates', templateName);
-
-      console.log('filePath:', filePath);
-
-      console.log(' __dirname:', __dirname);
-      if (!filePath) {
-        throw new NotFoundException({
-          message: 'File path not found.',
-          success: false,
-          status: 404,
-        });
-      }
+      const filePath = join(__dirname, '..', 'templates', templateName);
 
       template = fs.readFileSync(filePath, 'utf-8');
       this.templateCache.set(templateName, template);
@@ -97,6 +70,7 @@ export class MailProcessor {
 
     return template;
   }
+
   @Process({ name: 'send_email', concurrency: 5 })
   async handleSendEmail(job: Job<SendEmailJob>) {
     try {
@@ -122,6 +96,8 @@ export class MailProcessor {
 
         console.log('Email response:', info);
       }
+
+      console.log(`Email sent to ${to}`);
     } catch (error) {
       console.error('Email sending failed:', error);
       throw error;
