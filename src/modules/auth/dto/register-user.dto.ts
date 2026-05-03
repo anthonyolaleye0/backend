@@ -73,7 +73,7 @@ export class RegisterUserDto {
     example: 'StrongP@ssword1',
   })
   @Match('password', {
-    message: 'Password and confirm password mush match',
+    message: 'Password and confirm password must match',
   })
   confirmPassword!: string;
 }

@@ -34,7 +34,7 @@ export class ResetPasswordDto {
     example: 'StrongP@ssword1',
   })
   @Match('password', {
-    message: 'Password and confirm password must match',
+    message: 'Password and confirm password must match123',
   })
   confirmPassword!: string;
 
