@@ -290,6 +290,8 @@ export class AuthService {
       });
     }
 
+    await this.tokensRepository.delete(findToken._id);
+
     return {
       message: 'Password changed successfully.',
     };

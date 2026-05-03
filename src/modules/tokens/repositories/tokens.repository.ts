@@ -14,7 +14,10 @@ export class TokensRepository {
     return this.tokenModel.findById(id);
   }
 
-  async findOneByUserIdAndPurpose(userId: Types.ObjectId, purpose: TokenPurpose) {
+  async findOneByUserIdAndPurpose(
+    userId: Types.ObjectId,
+    purpose: TokenPurpose,
+  ) {
     return this.tokenModel.findOne({
       user: userId,
       purpose,
