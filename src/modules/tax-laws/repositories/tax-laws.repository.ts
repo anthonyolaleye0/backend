@@ -2124,11 +2124,34 @@ Return the ID of that section so the frontend can "jump" to it.
      */
   }
   async getTaxLawSectionBySectionId(sectionId: string) {
+    const id = new Types.ObjectId(sectionId);
     /**
      * Returns the full text of a specific section and its
      * subsections. This is called when the user finally selects a
      * section from the TOC or a search result.
      */
+
+    const result = await this.sectionModel.aggregate([
+      {
+        $match: { _id: id },
+      },
+
+      {
+        $lookup: {
+          from: 'subsections',
+          localField: '_id',
+          foreignField: 'section',
+          as: 'subsections',
+        },
+      },
+      {
+        $sort: { 'subsections.createdAt': -1 },
+      },
+    ]);
+
+    console.log('repo result:', result);
+
+    return result[0];
   }
   async getTaxLawsTableOfCotent(taxLawId: string) {
     const id = new Types.ObjectId(taxLawId);

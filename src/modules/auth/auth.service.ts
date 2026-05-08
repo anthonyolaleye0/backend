@@ -129,6 +129,8 @@ export class AuthService {
   async loginUser(loginDto: LoginDto): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
 
+    console.log('email:', email);
+
     const user = await this.usersRepository.findByEmail(email?.trim());
 
     if (!user || user === null) {

@@ -210,7 +210,10 @@ export class TaxLawsController {
     description: 'Internal server error',
   })
   async getTaxLawSectionBySectionId(@Param('sectionId') sectionId: string) {
-    return await this.taxLawsService.getTaxLawSectionBySectionId(sectionId);
+    const section =
+      await this.taxLawsService.getTaxLawSectionBySectionId(sectionId);
+
+    return section;
   }
 
   @Get('search-tax-law/:taxLawId/search')
