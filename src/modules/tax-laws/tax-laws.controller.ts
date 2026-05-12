@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   FileTypeValidator,
   Get,
@@ -7,6 +8,7 @@ import {
   Param,
   ParseFilePipe,
   Post,
+  Put,
   Query,
   UploadedFile,
   UseGuards,
@@ -28,6 +30,11 @@ import { QueryWithPaginationDto } from '../../common/dto/query-with-pagination';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Role } from '../users/schemas/user.schema';
+import { UpdateChapterDto } from './dtos/update-chapter.dto';
+import { UpdatePartDto } from './dtos/update-part.dto';
+import { UpdateScheduleDto } from './dtos/update-schedule.dto';
+import { UpdateSectionDto } from './dtos/update-section.dto';
+import { UpdateSubSectionDto } from './dtos/update-subsection.dto';
 import { TaxLawsService } from './tax-laws.service';
 
 @Controller('tax-laws')
@@ -184,6 +191,32 @@ export class TaxLawsController {
   async getTaxLawStructureByTaxId(@Param('taxId') taxId: string) {
     return await this.taxLawsService.getTaxLawStructureByTaxId(taxId);
   }
+  @Get('get-tax-law-schedule-by-scheduleId/:scheduleId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin, Role.user)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law schedule fetched successfully')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Fetching tax law schedule',
+    description: 'This is the endpoint for fetching tax law schedule.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law schedule fetched successfully',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to fetch tax law schedule.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async getTaxLawScheduleByScheduleId(@Param('scheduleId') scheduleId: string) {
+    return await this.taxLawsService.getTaxLawScheduleByScheduleId(scheduleId);
+  }
 
   @Get('get-tax-law-section-by-sectionId/:sectionId')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -254,6 +287,42 @@ export class TaxLawsController {
       queryWithPaginationDto,
     );
   }
+  @Get('get-tax-law-schedules-by-taxLawId/:taxLawId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin, Role.user)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law schedules fetched successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get Tax law schedules',
+    description:
+      'This is the endpoint for fetching content for tax law schedules.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law schedules fetched successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to fetch tax law schedules.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async findLawSchedulesByTaxLawId(
+    @Param('taxLawId') taxLawId: string,
+    @Query() queryWithPaginationDto: QueryWithPaginationDto,
+  ) {
+    const response = await this.taxLawsService.findLawSchedulesByTaxLawId(
+      taxLawId,
+      queryWithPaginationDto,
+    );
+
+    console.log('response:', response);
+    return response;
+  }
 
   @Get('get-tax-law-chapter-by-chapter-id/:chapterId')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -280,5 +349,191 @@ export class TaxLawsController {
   })
   async findTaxLawChapterByChapterId(@Param('chapterId') chapterId: string) {
     return await this.taxLawsService.findTaxLawChapterByChapterId(chapterId);
+  }
+
+  @Put('update-tax-law-subsection-by-subsection-id/:subsectionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law sub section updated successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update tax law sub section.',
+    description:
+      'This is the endpoint for updating tax law sub section using subsectionId.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law sub section updated successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to update tax law subsection.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async updateSubSection(
+    @Param('subsectionId') subsectionId: string,
+    @Body() updateSubSectionDto: UpdateSubSectionDto,
+  ) {
+    const response = await this.taxLawsService.updateSubSection(
+      subsectionId,
+      updateSubSectionDto,
+    );
+
+    console.log('controller response:', response);
+
+    return response;
+  }
+
+  @Put('update-tax-law-section-by-section-id/:sectionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law section updated successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update tax law section.',
+    description:
+      'This is the endpoint for updating tax law section using sectionId.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law section updated successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to update tax law section.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async updateSection(
+    @Param('sectionId') sectionId: string,
+    @Body() updateSectionDto: UpdateSectionDto,
+  ) {
+    const response = await this.taxLawsService.updateSection(
+      sectionId,
+      updateSectionDto,
+    );
+
+    console.log('controller response:', response);
+
+    return response;
+  }
+  @Put('update-tax-law-schedule-by-schedule-id/:scheduleId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law schedule updated successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update tax law schedule.',
+    description:
+      'This is the endpoint for updating tax law schedule using scheduleId.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law schedule updated successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to update tax law schedule.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async updateSchedule(
+    @Param('scheduleId') scheduleId: string,
+    @Body() updateScheduleDto: UpdateScheduleDto,
+  ) {
+    const response = await this.taxLawsService.updateSchedule(
+      scheduleId,
+      updateScheduleDto,
+    );
+
+    console.log('controller response:', response);
+
+    return response;
+  }
+  @Put('update-tax-law-chapter-by-chapter-id/:chapterId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law chapter updated successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update tax law chapter.',
+    description:
+      'This is the endpoint for updating tax law chapter using chapterId.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law chapter updated successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to update tax law chapter.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async updateChapter(
+    @Param('chapterId') chapterId: string,
+    @Body() updateChapterDto: UpdateChapterDto,
+  ) {
+    const response = await this.taxLawsService.updateChapter(
+      chapterId,
+      updateChapterDto,
+    );
+
+    console.log('controller response:', response);
+
+    return response;
+  }
+  @Put('update-tax-law-part-by-part-id/:partId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law part updated successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update tax law part.',
+    description: 'This is the endpoint for updating tax law part using partId.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law part updated successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to update tax law part.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async updatePart(
+    @Param('partId') partId: string,
+    @Body() updatePartDto: UpdatePartDto,
+  ) {
+    const response = await this.taxLawsService.updatePart(
+      partId,
+      updatePartDto,
+    );
+
+    console.log('controller response:', response);
+
+    return response;
   }
 }

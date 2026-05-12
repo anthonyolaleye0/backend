@@ -45,6 +45,14 @@ export class TaxLawsRepository {
     private readonly connection: Connection,
   ) {}
 
+  async getTaxLawScheduleByScheduleId(scheduleId: string) {
+    const id = new Types.ObjectId(scheduleId);
+    const schedule = await this.scheduleModel.findById(id);
+
+    console.log('schedule:', schedule);
+    return schedule;
+  }
+
   // async createFullTaxLawDocument(parsed: any) {
   //   const session = await this.connection.startSession();
   //   session.startTransaction();
@@ -3603,6 +3611,54 @@ This allows the user to see the structure and click where they want to go.
   //   return taxLaw;
   // }
 
+  async findLawSchedulesByTaxLawId(
+    taxLawId: string,
+    queryWithPaginationDto: QueryWithPaginationDto,
+  ) {
+    const id = new Types.ObjectId(taxLawId);
+
+    const { page = 1, limit = 10, searchParams } = queryWithPaginationDto;
+
+    const skip = (page - 1) * limit;
+
+    // Multi-word search regex
+    const searchRegex = searchParams
+      ? new RegExp(
+          searchParams
+            .trim()
+            .split(/\s+/)
+            .map((word) => `(?=.*${word})`)
+            .join(''),
+          'i',
+        )
+      : null;
+
+    // Build filter
+    const filter: any = {
+      taxLaw: id,
+    };
+
+    if (searchRegex) {
+      filter.content = { $regex: searchRegex }; // adjust field if needed
+    }
+
+    // Fetch paginated schedules
+    const schedules = await this.scheduleModel
+      .find(filter)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }); // optional
+
+    // Total count
+    const totalSchedules = await this.scheduleModel.countDocuments(filter);
+
+    return {
+      schedules,
+      totalSchedules,
+      page,
+      limit,
+    };
+  }
   async findLawById(
     taxLawId: string,
     queryWithPaginationDto: QueryWithPaginationDto,
@@ -3875,5 +3931,117 @@ This allows the user to see the structure and click where they want to go.
 
     console.log('taxLaw:', taxLaw);
     return taxLaw;
+  }
+
+  async getSectionBySectionId(
+    sectionId: string,
+  ): Promise<SectionDocument | null> {
+    const id = new Types.ObjectId(sectionId);
+    const section = await this.sectionModel.findById(id);
+    return section;
+  }
+  async updateScheduleByScheduleId(
+    scheduleId: string,
+    data: Partial<ScheduleDocument>,
+  ): Promise<ScheduleDocument | null> {
+    const id = new Types.ObjectId(scheduleId);
+    const response = await this.scheduleModel.findByIdAndUpdate(
+      id,
+      {
+        data,
+      },
+      {
+        returnDocument: 'after',
+      },
+    );
+
+    return response;
+  }
+  async updateSectionBySectionId(
+    sectionId: string,
+    data: Partial<SectionDocument>,
+  ): Promise<SectionDocument | null> {
+    const id = new Types.ObjectId(sectionId);
+    const response = await this.sectionModel.findByIdAndUpdate(
+      id,
+      {
+        data,
+      },
+      {
+        returnDocument: 'after',
+      },
+    );
+
+    return response;
+  }
+  async getPartByPartId(partId: string): Promise<PartDocument | null> {
+    const id = new Types.ObjectId(partId);
+    const part = await this.partModel.findById(id);
+    return part;
+  }
+  async updatePartByPartId(
+    partId: string,
+    data: Partial<PartDocument>,
+  ): Promise<PartDocument | null> {
+    const id = new Types.ObjectId(partId);
+    const response = await this.partModel.findByIdAndUpdate(
+      id,
+      {
+        data,
+      },
+      {
+        returnDocument: 'after',
+      },
+    );
+
+    return response;
+  }
+  async getChapterByChapterId(
+    chapterId: string,
+  ): Promise<ChapterDocument | null> {
+    const id = new Types.ObjectId(chapterId);
+    const chapter = await this.chapterModel.findById(id);
+    return chapter;
+  }
+  async updateChapterByChapterId(
+    chapterId: string,
+    data: Partial<SubSectionDocument>,
+  ): Promise<ChapterDocument | null> {
+    const id = new Types.ObjectId(chapterId);
+    const response = await this.chapterModel.findByIdAndUpdate(
+      id,
+      {
+        data,
+      },
+      {
+        returnDocument: 'after',
+      },
+    );
+
+    return response;
+  }
+  async getSubSectionBySubSectionId(
+    subSectionId: string,
+  ): Promise<SubSectionDocument | null> {
+    const id = new Types.ObjectId(subSectionId);
+    const subSection = await this.subSectionModel.findById(id);
+    return subSection;
+  }
+  async updateSubSectionBySubSectionId(
+    subSectionId: string,
+    data: Partial<SubSectionDocument>,
+  ): Promise<SubSectionDocument | null> {
+    const id = new Types.ObjectId(subSectionId);
+    const response = await this.subSectionModel.findByIdAndUpdate(
+      id,
+      {
+        data,
+      },
+      {
+        returnDocument: 'after',
+      },
+    );
+
+    return response;
   }
 }

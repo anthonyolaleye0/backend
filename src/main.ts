@@ -9,6 +9,7 @@ import { Queue } from 'bull';
 import { AppModule } from './app.module';
 import { MongoExceptionFilter } from './common/filters/mongo-exception.filter';
 import { GlobalResponseInterceptor } from './common/interceptor/global-response.interceptor';
+import { SanitizePipe } from './common/pipes/sanitize.pipe';
 import { TaxLawsRepository } from './modules/tax-laws/repositories/tax-laws.repository';
 
 async function bootstrap() {
@@ -51,6 +52,7 @@ async function bootstrap() {
         enableImplicitConversion: true,
       },
     }),
+    new SanitizePipe(),
   );
 
   const allowedOrigins = (process.env.ALLOWED_ORIGINS?.split(',') || []).map(

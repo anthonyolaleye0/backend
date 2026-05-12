@@ -1,9 +1,14 @@
 import { InjectQueue } from '@nestjs/bull';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Queue } from 'bull';
 import { Types } from 'mongoose';
 import { QueryWithPaginationDto } from '../../common/dto/query-with-pagination';
 import { DocumentProcessingService } from '../document-processing/document-processing.service';
+import { UpdateChapterDto } from './dtos/update-chapter.dto';
+import { UpdatePartDto } from './dtos/update-part.dto';
+import { UpdateScheduleDto } from './dtos/update-schedule.dto';
+import { UpdateSectionDto } from './dtos/update-section.dto';
+import { UpdateSubSectionDto } from './dtos/update-subsection.dto';
 import { TaxLawsRepository } from './repositories/tax-laws.repository';
 import { TaxLawParserService } from './tax-law-parser.service';
 
@@ -15,6 +20,13 @@ export class TaxLawsService {
     private readonly taxLawParserService: TaxLawParserService,
     @InjectQueue('tax-law-queue') private readonly taxLawQueue: Queue,
   ) {}
+
+  async getTaxLawScheduleByScheduleId(scheduleId: string) {
+    const schedule =
+      await this.taxLawsRepository.getTaxLawScheduleByScheduleId(scheduleId);
+
+    return schedule;
+  }
 
   async createFullTaxLawDocument(file: Express.Multer.File) {
     // 1. Extract text
@@ -65,6 +77,7 @@ export class TaxLawsService {
     );
     return taxLaws;
   }
+
   async searchTaxLaw(queryWithPaginationDto: QueryWithPaginationDto) {
     const taxLaws = await this.taxLawsRepository.searchTaxLaw(
       queryWithPaginationDto,
@@ -101,8 +114,116 @@ export class TaxLawsService {
     );
   }
 
+  async findLawSchedulesByTaxLawId(
+    taxLawId: string,
+    queryWithPaginationDto: QueryWithPaginationDto,
+  ) {
+    return await this.taxLawsRepository.findLawSchedulesByTaxLawId(
+      taxLawId,
+      queryWithPaginationDto,
+    );
+  }
+
   async findTaxLawChapterByChapterId(chapterId: string) {
     return await this.taxLawsRepository.findTaxLawChapterByChapterId(chapterId);
+  }
+
+  async updateChapter(chapterId: string, updateChapterDto: UpdateChapterDto) {
+    const response = await this.taxLawsRepository.updateChapterByChapterId(
+      chapterId,
+      updateChapterDto,
+    );
+
+    if (!response) {
+      throw new NotFoundException({
+        message: 'Chapter not found.',
+        success: false,
+        status: 404,
+      });
+    }
+
+    console.log('service response:', response);
+
+    return response;
+  }
+  async updateSection(sectionId: string, updateSectoDto: UpdateSectionDto) {
+    const response = await this.taxLawsRepository.updateSectionBySectionId(
+      sectionId,
+      updateSectoDto,
+    );
+
+    if (!response) {
+      throw new NotFoundException({
+        message: 'Section not found.',
+        success: false,
+        status: 404,
+      });
+    }
+
+    console.log('service response:', response);
+
+    return response;
+  }
+  async updateSchedule(
+    scheduleId: string,
+    updateScheduleDto: UpdateScheduleDto,
+  ) {
+    const response = await this.taxLawsRepository.updateScheduleByScheduleId(
+      scheduleId,
+      updateScheduleDto,
+    );
+
+    if (!response) {
+      throw new NotFoundException({
+        message: 'Schedule not found.',
+        success: false,
+        status: 404,
+      });
+    }
+
+    console.log('service response:', response);
+
+    return response;
+  }
+  async updateSubSection(
+    subsectionId: string,
+    updateSubSectionDto: UpdateSubSectionDto,
+  ) {
+    const response =
+      await this.taxLawsRepository.updateSubSectionBySubSectionId(
+        subsectionId,
+        updateSubSectionDto,
+      );
+
+    if (!response) {
+      throw new NotFoundException({
+        message: 'Sub section not found.',
+        success: false,
+        status: 404,
+      });
+    }
+
+    console.log('service response:', response);
+
+    return response;
+  }
+  async updatePart(partId: string, updatePartDto: UpdatePartDto) {
+    const response = await this.taxLawsRepository.updatePartByPartId(
+      partId,
+      updatePartDto,
+    );
+
+    if (!response) {
+      throw new NotFoundException({
+        message: 'Part not found.',
+        success: false,
+        status: 404,
+      });
+    }
+
+    console.log('service response:', response);
+
+    return response;
   }
 }
 
