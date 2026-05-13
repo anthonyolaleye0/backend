@@ -454,6 +454,7 @@ export class TaxLawsController {
     @Param('scheduleId') scheduleId: string,
     @Body() updateScheduleDto: UpdateScheduleDto,
   ) {
+    console.log('controller updateScheduleDto:', updateScheduleDto);
     const response = await this.taxLawsService.updateSchedule(
       scheduleId,
       updateScheduleDto,

@@ -11,7 +11,7 @@ export class SubSection {
   @Prop()
   number?: string; // e.g. "(1)", "(a)", "(i)"
 
-  @Prop()
+  @Prop({ trim: true })
   content?: string;
 }
 

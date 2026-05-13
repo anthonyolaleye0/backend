@@ -26,13 +26,13 @@ export class Section {
   @Prop({ type: Types.ObjectId, ref: 'Part', required: true })
   part!: Types.ObjectId;
 
-  @Prop()
+  @Prop({ trim: true })
   title?: string;
 
   @Prop()
   number?: string; // e.g. "Section 12"
 
-  @Prop()
+  @Prop({ trim: true })
   content?: string;
 }
 

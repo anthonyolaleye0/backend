@@ -7,7 +7,7 @@ export class Part {
   @Prop({ type: Types.ObjectId, ref: 'Chapter', required: true })
   chapter!: Types.ObjectId;
 
-  @Prop()
+  @Prop({ trim: true })
   title?: string;
 
   @Prop()

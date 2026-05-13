@@ -8,13 +8,13 @@ export class Chapter {
   @Prop({ type: Types.ObjectId, ref: 'TaxLaw', required: true })
   taxLaw!: Types.ObjectId;
 
-  @Prop({ required: true })
+  @Prop({ required: true, trim: true })
   title!: string;
 
   @Prop()
   number?: string; // e.g. "CHAPTER I"
 
-  @Prop()
+  @Prop({ trim: true })
   content?: string;
 }
 

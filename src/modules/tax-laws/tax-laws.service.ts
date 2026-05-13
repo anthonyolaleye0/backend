@@ -25,6 +25,14 @@ export class TaxLawsService {
     const schedule =
       await this.taxLawsRepository.getTaxLawScheduleByScheduleId(scheduleId);
 
+    if (!schedule) {
+      throw new NotFoundException({
+        message: 'Schedule not found.',
+        success: false,
+        status: 404,
+      });
+    }
+
     return schedule;
   }
 
@@ -87,6 +95,14 @@ export class TaxLawsService {
   async getTaxLawSectionBySectionId(sectionId: string) {
     const taxLaws =
       await this.taxLawsRepository.getTaxLawSectionBySectionId(sectionId);
+
+    if (!taxLaws) {
+      throw new NotFoundException({
+        message: 'Section not found.',
+        success: false,
+        status: 404,
+      });
+    }
     return taxLaws;
   }
   async getTaxLawsTableOfCotent(taxLawId: string) {
@@ -99,6 +115,15 @@ export class TaxLawsService {
     const taxLaw =
       await this.taxLawsRepository.getTaxLawStructureByTaxId(taxId);
     console.log('taxLaw:', taxLaw);
+
+    if (!taxLaw) {
+      throw new NotFoundException({
+        message: 'Structure not found.',
+        success: false,
+        status: 404,
+      });
+    }
+
     return taxLaw;
   }
 
@@ -118,14 +143,34 @@ export class TaxLawsService {
     taxLawId: string,
     queryWithPaginationDto: QueryWithPaginationDto,
   ) {
-    return await this.taxLawsRepository.findLawSchedulesByTaxLawId(
+    const response = await this.taxLawsRepository.findLawSchedulesByTaxLawId(
       taxLawId,
       queryWithPaginationDto,
     );
+
+    if (!response) {
+      throw new NotFoundException({
+        message: 'Schedule not found.',
+        success: false,
+        status: 404,
+      });
+    }
+    return response;
   }
 
   async findTaxLawChapterByChapterId(chapterId: string) {
-    return await this.taxLawsRepository.findTaxLawChapterByChapterId(chapterId);
+    const response =
+      await this.taxLawsRepository.findTaxLawChapterByChapterId(chapterId);
+
+    if (!response) {
+      throw new NotFoundException({
+        message: 'Chapter not found.',
+        success: false,
+        status: 404,
+      });
+    }
+
+    return response;
   }
 
   async updateChapter(chapterId: string, updateChapterDto: UpdateChapterDto) {

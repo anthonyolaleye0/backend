@@ -8,13 +8,13 @@ export class Schedule {
   @Prop({ type: Types.ObjectId, ref: 'TaxLaw', required: true })
   taxLaw!: Types.ObjectId;
 
-  @Prop()
+  @Prop({ trim: true })
   title?: string;
 
   @Prop()
   number?: string;
 
-  @Prop()
+  @Prop({ trim: true })
   content?: string;
 }
 

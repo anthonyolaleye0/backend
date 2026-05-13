@@ -3945,15 +3945,10 @@ This allows the user to see the structure and click where they want to go.
     data: Partial<ScheduleDocument>,
   ): Promise<ScheduleDocument | null> {
     const id = new Types.ObjectId(scheduleId);
-    const response = await this.scheduleModel.findByIdAndUpdate(
-      id,
-      {
-        data,
-      },
-      {
-        returnDocument: 'after',
-      },
-    );
+
+    const response = await this.scheduleModel.findByIdAndUpdate(id, data, {
+      returnDocument: 'after',
+    });
 
     return response;
   }
@@ -3964,9 +3959,8 @@ This allows the user to see the structure and click where they want to go.
     const id = new Types.ObjectId(sectionId);
     const response = await this.sectionModel.findByIdAndUpdate(
       id,
-      {
-        data,
-      },
+      data,
+
       {
         returnDocument: 'after',
       },
@@ -3984,15 +3978,12 @@ This allows the user to see the structure and click where they want to go.
     data: Partial<PartDocument>,
   ): Promise<PartDocument | null> {
     const id = new Types.ObjectId(partId);
-    const response = await this.partModel.findByIdAndUpdate(
-      id,
-      {
-        data,
-      },
-      {
-        returnDocument: 'after',
-      },
-    );
+
+    console.log('data:', data);
+    const response = await this.partModel.findByIdAndUpdate(id, data, {
+      returnDocument: 'after',
+    });
+    console.log('response:', response);
 
     return response;
   }
@@ -4008,15 +3999,9 @@ This allows the user to see the structure and click where they want to go.
     data: Partial<SubSectionDocument>,
   ): Promise<ChapterDocument | null> {
     const id = new Types.ObjectId(chapterId);
-    const response = await this.chapterModel.findByIdAndUpdate(
-      id,
-      {
-        data,
-      },
-      {
-        returnDocument: 'after',
-      },
-    );
+    const response = await this.chapterModel.findByIdAndUpdate(id, data, {
+      returnDocument: 'after',
+    });
 
     return response;
   }
@@ -4032,15 +4017,9 @@ This allows the user to see the structure and click where they want to go.
     data: Partial<SubSectionDocument>,
   ): Promise<SubSectionDocument | null> {
     const id = new Types.ObjectId(subSectionId);
-    const response = await this.subSectionModel.findByIdAndUpdate(
-      id,
-      {
-        data,
-      },
-      {
-        returnDocument: 'after',
-      },
-    );
+    const response = await this.subSectionModel.findByIdAndUpdate(id, data, {
+      returnDocument: 'after',
+    });
 
     return response;
   }

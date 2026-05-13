@@ -16,7 +16,7 @@ export class TaxLaw {
   @Prop()
   year?: number;
 
-  @Prop()
+  @Prop({ trim: true })
   description?: string;
 
   @Prop()
