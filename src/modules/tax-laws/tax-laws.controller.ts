@@ -29,7 +29,13 @@ import { ApiResponseDto } from '../../common/dto/api-response.dto';
 import { QueryWithPaginationDto } from '../../common/dto/query-with-pagination';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { NormalizeDtoPipe } from '../../common/pipes/normalize-dto.pipe';
 import { Role } from '../users/schemas/user.schema';
+import { CreateChapterDto } from './dtos/create-chapter.dto';
+import { CreatePartDto } from './dtos/create-part.dto';
+import { CreateScheduleDto } from './dtos/create-schedule.dto';
+import { CreateSectionDto } from './dtos/create-section.dto';
+import { CreateSubSectionDto } from './dtos/create-subsection.dto';
 import { UpdateChapterDto } from './dtos/update-chapter.dto';
 import { UpdatePartDto } from './dtos/update-part.dto';
 import { UpdateScheduleDto } from './dtos/update-schedule.dto';
@@ -531,6 +537,201 @@ export class TaxLawsController {
     const response = await this.taxLawsService.updatePart(
       partId,
       updatePartDto,
+    );
+
+    console.log('controller response:', response);
+
+    return response;
+  }
+
+  @Post('create-tax-law-subsection-in-section-by-schedule-id/:sectionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law sub section created successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create tax law sub section in a section.',
+    description:
+      'This is the endpoint for creating tax law sub section in section using sectionId.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law sub section created successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to create tax law sub section.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async createSubsectionUsingSectionId(
+    @Param('sectionId') sectionId: string,
+    @Body(new NormalizeDtoPipe()) createSubSectionDto: CreateSubSectionDto,
+  ) {
+    console.log('controller createSubSectionDto:', createSubSectionDto);
+    const response = await this.taxLawsService.createSubsectionUsingSectionId(
+      sectionId,
+      createSubSectionDto,
+    );
+
+    console.log('controller response:', response);
+
+    return response;
+  }
+
+  @Post('create-tax-law-section-in-part-by-part-id/:partId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law section created successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create tax law section in a section.',
+    description:
+      'This is the endpoint for creating tax law section in part using partId.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law section created successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to create tax law section.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async createSectionUsingPartId(
+    @Param('partId') partId: string,
+    @Body(new NormalizeDtoPipe()) createSectionDto: CreateSectionDto,
+  ) {
+    console.log('controller createSubSectionDto:', createSectionDto);
+    const response = await this.taxLawsService.createSectionUsingPartId(
+      partId,
+      createSectionDto,
+    );
+
+    console.log('controller response:', response);
+
+    return response;
+  }
+
+  @Post('create-tax-law-part-in-chapter-by-chapter-id/:chapterId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law part created successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create tax law part in a chapter.',
+    description:
+      'This is the endpoint for creating tax law part in chapter using chapterId.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law part created successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to create tax law part.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async createPartByChapterId(
+    @Param('chapterId') chapterId: string,
+    @Body(new NormalizeDtoPipe()) createPartDto: CreatePartDto,
+  ) {
+    console.log('controller createPartDto:', createPartDto);
+    const response = await this.taxLawsService.createPartByChapterId(
+      chapterId,
+      createPartDto,
+    );
+
+    console.log('controller response:', response);
+
+    return response;
+  }
+
+  @Post('create-tax-law-chapter-in-taxlaw-by-taxlaw-id/:taxLawId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law chapter created successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create tax law chapter in a section.',
+    description:
+      'This is the endpoint for creating tax law chapter in tax law using taxLawId.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law chapter created successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to create tax law chapter.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async createChapterUsingTaxLawId(
+    @Param('taxLawId') taxLawId: string,
+    @Body(new NormalizeDtoPipe()) createChapterDto: CreateChapterDto,
+  ) {
+    console.log('controller createChapterDto:', createChapterDto);
+    const response = await this.taxLawsService.createChapterUsingTaxLawId(
+      taxLawId,
+      createChapterDto,
+    );
+
+    console.log('controller response:', response);
+
+    return response;
+  }
+
+  @Post('create-tax-law-schedule-in-taxlaw-by-taxlaw-id/:taxLawId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law schedule created successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create tax law schedule in a tax law.',
+    description:
+      'This is the endpoint for creating tax law schedule in taxlaw using taxLawId.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law schedule created successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to create tax law schedule.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async createScheduleUsingTaxLawId(
+    @Param('taxLawId') taxLawId: string,
+    @Body(new NormalizeDtoPipe()) createScheduleDto: CreateScheduleDto,
+  ) {
+    console.log('controller createScheduleDto:', createScheduleDto);
+    const response = await this.taxLawsService.createScheduleUsingTaxLawId(
+      taxLawId,
+      createScheduleDto,
     );
 
     console.log('controller response:', response);

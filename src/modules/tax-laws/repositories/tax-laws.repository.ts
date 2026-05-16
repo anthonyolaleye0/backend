@@ -2,6 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
 import { QueryWithPaginationDto } from '../../../common/dto/query-with-pagination';
+import { CreateChapterDto } from '../dtos/create-chapter.dto';
+import { CreatePartDto } from '../dtos/create-part.dto';
+import { CreateScheduleDto } from '../dtos/create-schedule.dto';
+import { CreateSectionDto } from '../dtos/create-section.dto';
+import { CreateSubSectionDto } from '../dtos/create-subsection.dto';
 import { Chapter, ChapterDocument } from '../schemas/chapter.schema';
 import { Part, PartDocument } from '../schemas/part.schema';
 import { Schedule, ScheduleDocument } from '../schemas/schedule.schema';
@@ -4005,12 +4010,137 @@ This allows the user to see the structure and click where they want to go.
 
     return response;
   }
+  async getChapterByTaxLawIdAndNumber(
+    taxLawId: string,
+    number: string,
+  ): Promise<ChapterDocument | null> {
+    const taxLaw = new Types.ObjectId(taxLawId);
+    const chapter = await this.chapterModel.findOne({
+      taxLaw,
+      number,
+    });
+    return chapter;
+  }
+  async getScheduleByTaxLawIdAndNumber(
+    taxLawId: string,
+    number: string,
+  ): Promise<ScheduleDocument | null> {
+    const taxLaw = new Types.ObjectId(taxLawId);
+    const schedule = await this.scheduleModel.findOne({
+      taxLaw,
+      number,
+    });
+    return schedule;
+  }
+  async getPartByChapterIdAndNumber(
+    chapterId: string,
+    number: string,
+  ): Promise<PartDocument | null> {
+    const chapter = new Types.ObjectId(chapterId);
+    const section = await this.partModel.findOne({
+      chapter,
+      number,
+    });
+    return section;
+  }
+  async getSectionByPartIdAndNumber(
+    partId: string,
+    number: string,
+  ): Promise<SectionDocument | null> {
+    const part = new Types.ObjectId(partId);
+    const section = await this.sectionModel.findOne({
+      part,
+      number,
+    });
+    return section;
+  }
+  async getSubSectionBySectionIdAndNumber(
+    sectionId: string,
+    number: string,
+  ): Promise<SubSectionDocument | null> {
+    const section = new Types.ObjectId(sectionId);
+    const subSection = await this.subSectionModel.findOne({
+      section,
+      number,
+    });
+    return subSection;
+  }
   async getSubSectionBySubSectionId(
     subSectionId: string,
   ): Promise<SubSectionDocument | null> {
     const id = new Types.ObjectId(subSectionId);
     const subSection = await this.subSectionModel.findById(id);
     return subSection;
+  }
+  async createPartByChapterId(
+    chapterId: string,
+    createPartDto: CreatePartDto,
+  ): Promise<PartDocument | null> {
+    const chapter = new Types.ObjectId(chapterId);
+
+    const data = {
+      chapter,
+      ...createPartDto,
+    };
+    const response = await new this.partModel(data).save();
+
+    return response;
+  }
+  async createSectionUsingPartId(
+    partId: string,
+    createSectionDto: CreateSectionDto,
+  ): Promise<ChapterDocument | null> {
+    const part = new Types.ObjectId(partId);
+
+    const data = {
+      part,
+      ...createSectionDto,
+    };
+    const response = await new this.chapterModel(data).save();
+
+    return response;
+  }
+  async createChapterUsingTaxLawId(
+    taxLawId: string,
+    createChapterDto: CreateChapterDto,
+  ): Promise<ChapterDocument | null> {
+    const taxLaw = new Types.ObjectId(taxLawId);
+
+    const data = {
+      taxLaw,
+      ...createChapterDto,
+    };
+    const response = await new this.chapterModel(data).save();
+
+    return response;
+  }
+  async createScheduleUsingTaxLawId(
+    taxLawId: string,
+    createScheduleDto: CreateScheduleDto,
+  ): Promise<ScheduleDocument | null> {
+    const taxLaw = new Types.ObjectId(taxLawId);
+
+    const data = {
+      taxLaw,
+      ...createScheduleDto,
+    };
+    const response = await new this.scheduleModel(data).save();
+
+    return response;
+  }
+  async createSubsectionUsingSectionId(
+    sectionId: string,
+    createSubSectionDto: CreateSubSectionDto,
+  ): Promise<SubSectionDocument | null> {
+    const section = new Types.ObjectId(sectionId);
+
+    const data = {
+      section,
+      ...createSubSectionDto,
+    };
+    const response = await new this.subSectionModel(data).save();
+
+    return response;
   }
   async updateSubSectionBySubSectionId(
     subSectionId: string,

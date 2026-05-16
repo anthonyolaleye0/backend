@@ -1,9 +1,18 @@
 import { InjectQueue } from '@nestjs/bull';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Queue } from 'bull';
 import { Types } from 'mongoose';
 import { QueryWithPaginationDto } from '../../common/dto/query-with-pagination';
 import { DocumentProcessingService } from '../document-processing/document-processing.service';
+import { CreateChapterDto } from './dtos/create-chapter.dto';
+import { CreatePartDto } from './dtos/create-part.dto';
+import { CreateScheduleDto } from './dtos/create-schedule.dto';
+import { CreateSectionDto } from './dtos/create-section.dto';
+import { CreateSubSectionDto } from './dtos/create-subsection.dto';
 import { UpdateChapterDto } from './dtos/update-chapter.dto';
 import { UpdatePartDto } from './dtos/update-part.dto';
 import { UpdateScheduleDto } from './dtos/update-schedule.dto';
@@ -245,6 +254,178 @@ export class TaxLawsService {
         message: 'Sub section not found.',
         success: false,
         status: 404,
+      });
+    }
+
+    console.log('service response:', response);
+
+    return response;
+  }
+  async createSubsectionUsingSectionId(
+    sectionId: string,
+    createSubSectionDto: CreateSubSectionDto,
+  ) {
+    const subsectionExist =
+      await this.taxLawsRepository.getSubSectionBySectionIdAndNumber(
+        sectionId,
+        createSubSectionDto.number.trim(),
+      );
+
+    if (subsectionExist) {
+      throw new ForbiddenException({
+        message: `Sub section with number ${createSubSectionDto.number} already exists in this section.`,
+        success: false,
+        status: 403,
+      });
+    }
+
+    const response =
+      await this.taxLawsRepository.createSubsectionUsingSectionId(
+        sectionId,
+        createSubSectionDto,
+      );
+
+    if (!response) {
+      throw new ForbiddenException({
+        message: 'unable to create sub section.',
+        success: false,
+        status: 403,
+      });
+    }
+
+    console.log('service response:', response);
+
+    return response;
+  }
+  async createScheduleUsingTaxLawId(
+    taxLawId: string,
+    createScheduleDto: CreateScheduleDto,
+  ) {
+    const scheduleExist =
+      await this.taxLawsRepository.getScheduleByTaxLawIdAndNumber(
+        taxLawId,
+        createScheduleDto.number.trim(),
+      );
+
+    if (scheduleExist) {
+      throw new ForbiddenException({
+        message: `Schedule with number ${createScheduleDto.number} already exists in this tax law.`,
+        success: false,
+        status: 403,
+      });
+    }
+
+    const response = await this.taxLawsRepository.createScheduleUsingTaxLawId(
+      taxLawId,
+      createScheduleDto,
+    );
+
+    if (!response) {
+      throw new ForbiddenException({
+        message: 'Unable to create Schedule.',
+        success: false,
+        status: 403,
+      });
+    }
+
+    console.log('service response:', response);
+
+    return response;
+  }
+  async createPartByChapterId(chapterId: string, createPartDto: CreatePartDto) {
+    const partExist = await this.taxLawsRepository.getPartByChapterIdAndNumber(
+      chapterId,
+      createPartDto.number.trim(),
+    );
+
+    if (partExist) {
+      throw new ForbiddenException({
+        message: `Part with number ${createPartDto.number} already exists in this chapter.`,
+        success: false,
+        status: 403,
+      });
+    }
+
+    const response = await this.taxLawsRepository.createPartByChapterId(
+      chapterId,
+      createPartDto,
+    );
+
+    if (!response) {
+      throw new ForbiddenException({
+        message: 'Unable to create part.',
+        success: false,
+        status: 403,
+      });
+    }
+
+    console.log('service response:', response);
+
+    return response;
+  }
+  async createSectionUsingPartId(
+    partId: string,
+    createSectionDto: CreateSectionDto,
+  ) {
+    const sectionExist =
+      await this.taxLawsRepository.getSectionByPartIdAndNumber(
+        partId,
+        createSectionDto.number.trim(),
+      );
+
+    if (sectionExist) {
+      throw new ForbiddenException({
+        message: `Section with number ${createSectionDto.number} already exists in this part.`,
+        success: false,
+        status: 403,
+      });
+    }
+
+    const response = await this.taxLawsRepository.createSectionUsingPartId(
+      partId,
+      createSectionDto,
+    );
+
+    if (!response) {
+      throw new ForbiddenException({
+        message: 'Unable to create section.',
+        success: false,
+        status: 403,
+      });
+    }
+
+    console.log('service response:', response);
+
+    return response;
+  }
+  async createChapterUsingTaxLawId(
+    taxLawId: string,
+    createChapterDto: CreateChapterDto,
+  ) {
+    const chapterExist =
+      await this.taxLawsRepository.getChapterByTaxLawIdAndNumber(
+        taxLawId,
+        createChapterDto.number.trim(),
+      );
+
+    if (chapterExist) {
+      throw new ForbiddenException({
+        message: `Chapter with number ${createChapterDto.number} already exists in this tax law.`,
+        success: false,
+        status: 403,
+      });
+    }
+
+    const response = await this.taxLawsRepository.createChapterUsingTaxLawId(
+      taxLawId,
+      createChapterDto,
+    );
+
+    if (!response) {
+      throw new ForbiddenException({
+        message: 'Unable to create chapter.',
+        success: false,
+        status: 403,
       });
     }
 
