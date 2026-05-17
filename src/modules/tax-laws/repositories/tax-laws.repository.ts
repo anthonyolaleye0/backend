@@ -4089,14 +4089,14 @@ This allows the user to see the structure and click where they want to go.
   async createSectionUsingPartId(
     partId: string,
     createSectionDto: CreateSectionDto,
-  ): Promise<ChapterDocument | null> {
+  ): Promise<SectionDocument | null> {
     const part = new Types.ObjectId(partId);
 
     const data = {
       part,
       ...createSectionDto,
     };
-    const response = await new this.chapterModel(data).save();
+    const response = await new this.sectionModel(data).save();
 
     return response;
   }

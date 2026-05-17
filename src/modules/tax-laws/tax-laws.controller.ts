@@ -544,7 +544,7 @@ export class TaxLawsController {
     return response;
   }
 
-  @Post('create-tax-law-subsection-in-section-by-schedule-id/:sectionId')
+  @Post('create-tax-law-subsection-in-section-by-section-id/:sectionId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.admin)
   @ApiBearerAuth('JWT-auth')
