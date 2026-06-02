@@ -11,6 +11,9 @@ export class Chapter {
   @Prop({ required: true, trim: true })
   title!: string;
 
+  @Prop({ required: true })
+  order!: number;
+
   @Prop()
   number?: string; // e.g. "CHAPTER I"
 

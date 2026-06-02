@@ -13,6 +13,9 @@ export class SubSection {
 
   @Prop({ trim: true })
   content?: string;
+
+  @Prop({ required: true })
+  order!: number;
 }
 
 export const SubSectionSchema = SchemaFactory.createForClass(SubSection);

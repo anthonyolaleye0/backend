@@ -25,14 +25,22 @@ export class TaxLawProcessor {
       console.log('parsed.chapters[0].parts[0]:', parsed.chapters[0].parts[0]);
 
       for (const ch of parsed.chapters || []) {
+        const lastChapter = await this.repository.getLastChapterOrder(taxLawId);
+
         const chapter = await this.repository.createChapter({
           taxLaw: taxLawId,
+          order: lastChapter ? lastChapter.order + 1 : 1,
           ...ch,
         });
 
         for (const pt of ch.parts || []) {
+          const lastPart = await this.repository.getLastPartOrder(
+            chapter._id.toString(),
+          );
+
           const part = await this.repository.createPart({
             chapter: chapter._id,
+            order: lastPart ? lastPart.order + 1 : 1,
             ...pt,
           });
 
@@ -42,15 +50,27 @@ export class TaxLawProcessor {
             taxLaw: taxLawId,
           }));
 
-          const createdSections =
-            await this.repository.insertSections(sectionData);
+          const lastSection = await this.repository.getLastSectionOrder(
+            part._id.toString(),
+          );
+
+          // const createdSections =
+          //   await this.repository.insertSections(sectionData);
+
+          const createdSections = await this.repository.insertSections(
+            sectionData.map((s, index) => ({
+              ...s,
+              order: lastSection ? lastSection.order + index + 1 : index + 1,
+            })),
+          );
           totalSectionsCount += createdSections.length;
 
           const subsections: any[] = [];
           createdSections.forEach((s, idx) => {
             const rawSub = pt.sections[idx].subsections || [];
-            rawSub.forEach((sub) =>
-              subsections.push({ ...sub, section: s._id }),
+
+            rawSub.forEach((sub, subIndex) =>
+              subsections.push({ ...sub, section: s._id, order: subIndex + 1 }),
             );
           });
 

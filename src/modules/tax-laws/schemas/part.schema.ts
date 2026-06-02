@@ -10,6 +10,9 @@ export class Part {
   @Prop({ trim: true })
   title?: string;
 
+  @Prop({ required: true })
+  order!: number;
+
   @Prop()
   number?: string; // e.g. "PART II"
 }

@@ -2,6 +2,7 @@ import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
 import Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -11,6 +12,7 @@ import { AmendmentsModule } from './modules/amendments/amendments.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CalculatorsModule } from './modules/calculators/calculators.module';
 import { CaseLawModule } from './modules/case-law/case-law.module';
+import { DailyTipsModule } from './modules/daily-tips/daily-tips.module';
 import { DeadlinesModule } from './modules/deadlines/deadlines.module';
 import { DocumentProcessingModule } from './modules/document-processing/document-processing.module';
 import { FinanceModule } from './modules/finance/finance.module';
@@ -94,6 +96,7 @@ import { UsersModule } from './modules/users/users.module';
         };
       },
     }),
+    ScheduleModule.forRoot(),
     MailModule,
     AuthModule,
     TokensModule,
@@ -109,6 +112,7 @@ import { UsersModule } from './modules/users/users.module';
     FinanceModule,
     SearchModule,
     DocumentProcessingModule,
+    DailyTipsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

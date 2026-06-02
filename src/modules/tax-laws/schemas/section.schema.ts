@@ -34,6 +34,9 @@ export class Section {
 
   @Prop({ trim: true })
   content?: string;
+
+  @Prop({ required: true })
+  order!: number;
 }
 
 export const SectionSchema = SchemaFactory.createForClass(Section);

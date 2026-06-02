@@ -107,4 +107,11 @@ export class UsersRepository {
 
     return response;
   }
+
+  async findAllEmailsForDailyTips() {
+    const emails = await this.userModel.find({}, { email: 1 });
+
+    console.log('findAllEmailsForDailyTips:', emails);
+    return emails;
+  }
 }

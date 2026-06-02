@@ -9,7 +9,7 @@ export class MailService {
   private app_name = 'Smart Tax App';
 
   private async sendMail(data: SendEmailJob) {
-    console.log('🚀 Adding email job...', data);
+    console.log('Adding email job...', data);
 
     await this.mailQueue.add('send_email', data, {
       attempts: 3,
@@ -17,7 +17,7 @@ export class MailService {
       removeOnComplete: true,
       removeOnFail: false,
     });
-    console.log('✅ Job added');
+    console.log('Job added');
 
     return { message: `Email job added to queue for ${data.to}` };
   }
@@ -37,6 +37,20 @@ export class MailService {
       subject: 'Password Reset',
       templateName: 'password-reset.ejs',
       templateData: { first_name, token, app_name: this.app_name },
+    });
+  }
+
+  async sendDailyTipsMail(data: {
+    to: string;
+    subject: string;
+    templateName: string;
+    templateData: any;
+  }) {
+    return this.sendMail({
+      to: data.to,
+      subject: data.subject,
+      templateName: data.templateName,
+      templateData: { ...data.templateData, app_name: this.app_name },
     });
   }
 }
