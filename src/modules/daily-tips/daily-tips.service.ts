@@ -16,7 +16,7 @@ export class DailyTipsService {
     private mailService: MailService,
   ) {}
 
-  @Cron('0 8 * * *')
+  @Cron('*/1 * * * *')
   async handleDailyLawPush() {
     this.logger.log('Running daily tax tip job...');
     console.log('Running daily tax tip job...');
