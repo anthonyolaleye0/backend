@@ -16,7 +16,9 @@ export class DailyTipsService {
     private mailService: MailService,
   ) {}
 
-  @Cron('* 8 * * * *')
+  @Cron('0 0 12 * * *', {
+    timeZone: 'Africa/Lagos',
+  })
   async handleDailyLawPush() {
     this.logger.log('Running daily tax tip job...');
     console.log('Running daily tax tip job...');
