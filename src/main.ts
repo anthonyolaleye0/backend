@@ -83,7 +83,7 @@ async function bootstrap() {
 
   // Enable Swagger Docs
   const config = new DocumentBuilder()
-    .setTitle('Q and A API Documentation')
+    .setTitle('Smart tax arena API Documentation')
     .setDescription('API documentation for smart tax arena application')
     .setVersion('1.0')
     .addTag('auth', 'Authentication related endpoints.')

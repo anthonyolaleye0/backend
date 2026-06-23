@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import { MailService } from '../../mail/mail.service';
 import { TaxLawsRepository } from '../tax-laws/repositories/tax-laws.repository';
 import { UsersRepository } from '../users/repositories/users.repository';
@@ -16,9 +15,6 @@ export class DailyTipsService {
     private mailService: MailService,
   ) {}
 
-  @Cron('0 0 12 * * *', {
-    timeZone: 'Africa/Lagos',
-  })
   async handleDailyLawPush() {
     this.logger.log('Running daily tax tip job...');
     console.log('Running daily tax tip job...');

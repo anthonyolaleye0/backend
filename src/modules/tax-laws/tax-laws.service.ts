@@ -7,6 +7,7 @@ import {
 import type { Queue } from 'bull';
 import { Types } from 'mongoose';
 import { QueryWithPaginationDto } from '../../common/dto/query-with-pagination';
+import { TargetLevel } from '../amendments/dtos/create-amendment.dto';
 import { DocumentProcessingService } from '../document-processing/document-processing.service';
 import { CreateChapterDto } from './dtos/create-chapter.dto';
 import { CreatePartDto } from './dtos/create-part.dto';
@@ -29,6 +30,53 @@ export class TaxLawsService {
     private readonly taxLawParserService: TaxLawParserService,
     @InjectQueue('tax-law-queue') private readonly taxLawQueue: Queue,
   ) {}
+
+  async getEntityBase(entityId: string): Promise<{
+    entityId: string;
+    level: TargetLevel;
+    title: string;
+    content?: string;
+  }> {
+    // pseudo logic — depends on your schema
+
+    const chapter =
+      await this.taxLawsRepository.getChapterByChapterId(entityId);
+    if (chapter) {
+      return {
+        entityId: chapter._id.toString(),
+        level: TargetLevel.CHAPTER,
+        title: chapter.title,
+      };
+    }
+
+    const section =
+      await this.taxLawsRepository.getSectionBySectionId(entityId);
+    if (section) {
+      return {
+        entityId: section._id.toString(),
+        level: TargetLevel.SECTION,
+        title: section.title || '',
+        content: section.content,
+      };
+    }
+
+    const subsection =
+      await this.taxLawsRepository.getSubSectionBySubSectionId(entityId);
+    if (subsection) {
+      return {
+        entityId: subsection._id.toString(),
+        level: TargetLevel.SUBSECTION,
+        title: '',
+        content: subsection.content,
+      };
+    }
+
+    throw new NotFoundException({
+      message: 'Entity not found',
+      success: false,
+      status: 404,
+    });
+  }
 
   async getTaxLawScheduleByScheduleId(scheduleId: string) {
     const schedule =
@@ -452,20 +500,3 @@ export class TaxLawsService {
     return response;
   }
 }
-
-/**
- * 6. Professional Search Tip: The "Metadata" AID
-To make the search truly "smart," ensure your Section and Chapter numbers are stored as Strings, not just Numbers (e.g., "Section 12A").
-
-When fetching the "Summary" in Step 1, also return an array of "Available Chapters" (just the numbers). This allows your frontend to build a "Smart Search" dropdown where the user can pick:
-
-Dropdown 1: Select Law (CAMA 2020)
-
-Dropdown 2: Select Chapter (Chapter 1)
-
-Dropdown 3: Select Section (Section 5)
-
-This flow is much better than a "Google-style" text search because legal documents are accessed by reference more often than by keyword.
-
-Does this drill-down flow work for your frontend requirements? If so, I can provide the specific Repository queries to get the Table of Contents in one efficient "Join" (Aggregation).
- */

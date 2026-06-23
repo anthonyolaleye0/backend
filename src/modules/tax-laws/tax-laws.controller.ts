@@ -139,7 +139,6 @@ export class TaxLawsController {
     description: 'Internal server error',
   })
   async findTaxLaws(@Query() queryWithPaginationDto: QueryWithPaginationDto) {
-    console.log('I am being called for new query...');
     return await this.taxLawsService.findTaxLaws(queryWithPaginationDto);
   }
 

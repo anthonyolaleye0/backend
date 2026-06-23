@@ -7,6 +7,7 @@ import {
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
 import { QueryWithPaginationDto } from '../../../common/dto/query-with-pagination';
+import { TaxLawLevels } from '../../amendments/schemas/amendment.schema';
 import { DailyTipsRepository } from '../../daily-tips/repositories/daily-tips.repository';
 import { CreateChapterDto } from '../dtos/create-chapter.dto';
 import { CreatePartDto } from '../dtos/create-part.dto';
@@ -1757,5 +1758,104 @@ This allows the user to see the structure and click where they want to go.
     return this.sectionModel
       .findOne({ part: new Types.ObjectId(partId) })
       .sort({ order: -1 });
+  }
+
+  async resolveTaxLawIdFromEntity(
+    level: TaxLawLevels,
+    entityId: string,
+  ): Promise<Types.ObjectId> {
+    const id = new Types.ObjectId(entityId);
+
+    switch (level) {
+      case 'TAXLAW':
+        return id;
+
+      case 'CHAPTER': {
+        const chapter = await this.chapterModel
+          .findById(id)
+          .select('taxLaw')
+          .lean();
+
+        if (!chapter) throw new NotFoundException('Chapter not found');
+        return chapter.taxLaw;
+      }
+
+      case 'PART': {
+        const part = await this.partModel.findById(id).select('chapter').lean();
+
+        if (!part) throw new NotFoundException('Part not found');
+
+        const chapter = await this.chapterModel
+          .findById(part.chapter)
+          .select('taxLaw')
+          .lean();
+
+        if (!chapter) throw new NotFoundException('Chapter not found');
+
+        console.log('chapter.taxLaw:', chapter.taxLaw);
+
+        return chapter.taxLaw;
+      }
+
+      case 'SECTION': {
+        const section = await this.sectionModel
+          .findById(id)
+          .select('part')
+          .lean();
+
+        if (!section) throw new NotFoundException('Section not found');
+
+        console.log('section:', section);
+        const part = await this.partModel
+          .findById(section.part)
+          .select('chapter')
+          .lean();
+
+        if (!part) throw new NotFoundException('Part not found');
+
+        console.log('part:', part);
+        const chapter = await this.chapterModel
+          .findById(part.chapter)
+          .select('taxLaw')
+          .lean();
+
+        if (!chapter) throw new NotFoundException('Chapter not found');
+
+        console.log('chapter.taxLaw:', chapter.taxLaw);
+        return chapter.taxLaw;
+      }
+
+      case 'SUBSECTION': {
+        const sub = await this.subSectionModel
+          .findById(id)
+          .select('section')
+          .lean();
+
+        if (!sub) throw new NotFoundException('SubSection not found');
+
+        const section = await this.sectionModel
+          .findById(sub.section)
+          .select('part')
+          .lean();
+
+        if (!section) throw new NotFoundException('Section not found');
+
+        const part = await this.partModel
+          .findById(section.part)
+          .select('chapter')
+          .lean();
+
+        if (!part) throw new NotFoundException('Part not found');
+
+        const chapter = await this.chapterModel
+          .findById(part.chapter)
+          .select('taxLaw')
+          .lean();
+
+        if (!chapter) throw new NotFoundException('Chapter not found');
+
+        return chapter.taxLaw;
+      }
+    }
   }
 }
