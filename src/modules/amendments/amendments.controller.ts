@@ -53,6 +53,7 @@ export class AmendmentsController {
     @Body() dto: CreateAmendmentDto,
     @GetCurrentUser() user: JwtUser,
   ) {
+    console.log('dto:', dto);
     return this.service.createAmendment(dto, user.sub.toString());
   }
 

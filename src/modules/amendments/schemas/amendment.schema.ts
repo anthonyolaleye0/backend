@@ -123,8 +123,8 @@ export class Amendment {
   /**
    * Human-readable description
    */
-  @Prop({ required: true })
-  description!: string;
+  @Prop({ required: false })
+  description?: string;
 
   /**
    * Who made the amendment

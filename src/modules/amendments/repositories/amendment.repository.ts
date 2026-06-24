@@ -20,7 +20,7 @@ export class AmendmentRepository {
       title?: string;
       content?: string;
     };
-    description: string;
+    description?: string;
     effectiveDate: Date;
     metadata?: {
       financeAct?: string;

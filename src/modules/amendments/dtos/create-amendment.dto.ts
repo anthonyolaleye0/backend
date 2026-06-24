@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
@@ -44,6 +44,7 @@ export class TargetDto {
     required: false,
     example: {
       chapterNumber: 2,
+      partNumber: 5,
       sectionNumber: 15,
       subSectionNumber: 3,
     },
@@ -51,6 +52,7 @@ export class TargetDto {
   @IsOptional()
   path?: {
     chapterNumber?: number;
+    partNumber?: number;
     sectionNumber?: number;
     subSectionNumber?: number;
   };
@@ -87,18 +89,24 @@ export class CreateAmendmentDto {
 
   @ApiProperty({
     description: 'Date the amendment becomes effective',
+    example: '2024-01-01',
   })
   @IsDateString()
   effectiveDate!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Explanation of why this amendment exists',
   })
   @IsString()
-  description!: string;
+  description?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
+    description: 'Additional metadata about the amendment',
     required: false,
+    example: {
+      act: 'Finance Act 2024',
+      year: 2024,
+    },
   })
   @IsOptional()
   metadata?: {
@@ -153,14 +161,14 @@ export class CreateAmendmentDto {
 //   @IsString()
 //   description!: string;
 
-//   @ApiProperty({
-//     description: 'Additional metadata about the amendment',
-//     required: false,
-//     example: {
-//       financeAct: 'Finance Act 2024',
-//       year: 2024,
-//     },
-//   })
+// @ApiProperty({
+//   description: 'Additional metadata about the amendment',
+//   required: false,
+//   example: {
+//     financeAct: 'Finance Act 2024',
+//     year: 2024,
+//   },
+// })
 //   @IsOptional()
 //   metadata?: {
 //     financeAct?: string;
