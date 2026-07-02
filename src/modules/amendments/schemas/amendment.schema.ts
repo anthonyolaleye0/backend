@@ -10,6 +10,17 @@ export type TaxLawLevels =
   | 'SECTION'
   | 'SUBSECTION';
 
+export type AmendmentLeanType = {
+  _id: any;
+  entityId: any;
+  type: 'MODIFY' | 'REPEAL';
+  changes?: {
+    title?: string;
+    content?: string;
+  };
+  effectiveDate: Date;
+};
+
 export type AmendmentLean = {
   _id: string;
   taxLawId: string;
@@ -32,6 +43,20 @@ export type AmendmentLean = {
   description: string;
   amendedBy: string;
   isActive: boolean;
+};
+
+export type ResolvedEntity = {
+  _id: string;
+  title?: string;
+  content?: string;
+  level: TaxLawLevels;
+  meta: {
+    isAmended: boolean;
+    amendmentCount: number;
+  };
+  parts?: any[];
+  sections?: any[];
+  subsections?: any[];
 };
 
 @Schema({ timestamps: true })

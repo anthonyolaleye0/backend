@@ -1,13 +1,17 @@
 import { InjectQueue } from '@nestjs/bull';
 import {
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { Queue } from 'bull';
 import { Types } from 'mongoose';
 import { QueryWithPaginationDto } from '../../common/dto/query-with-pagination';
+import { AmendmentsService } from '../amendments/amendments.service';
 import { TargetLevel } from '../amendments/dtos/create-amendment.dto';
+import { TaxLawLevels } from '../amendments/schemas/amendment.schema';
 import { DocumentProcessingService } from '../document-processing/document-processing.service';
 import { CreateChapterDto } from './dtos/create-chapter.dto';
 import { CreatePartDto } from './dtos/create-part.dto';
@@ -28,6 +32,9 @@ export class TaxLawsService {
     private readonly taxLawsRepository: TaxLawsRepository,
     private readonly documentProcessingService: DocumentProcessingService,
     private readonly taxLawParserService: TaxLawParserService,
+
+    @Inject(forwardRef(() => AmendmentsService))
+    private readonly amendmentsService: AmendmentsService,
     @InjectQueue('tax-law-queue') private readonly taxLawQueue: Queue,
   ) {}
 
@@ -76,6 +83,15 @@ export class TaxLawsService {
       success: false,
       status: 404,
     });
+  }
+
+  async resolveTaxLawIdFromEntity(level: TaxLawLevels, entityId: string) {
+    const response = await this.taxLawsRepository.resolveTaxLawIdFromEntity(
+      level,
+      entityId,
+    );
+
+    return response;
   }
 
   async getTaxLawScheduleByScheduleId(scheduleId: string) {
@@ -215,7 +231,131 @@ export class TaxLawsService {
     return response;
   }
 
-  async findTaxLawChapterByChapterId(chapterId: string) {
+  // async findTaxLawChapterByChapterId(chapterId: string) {
+  //   const response =
+  //     await this.taxLawsRepository.findTaxLawChapterByChapterId(chapterId);
+
+  //   if (!response) {
+  //     throw new NotFoundException({
+  //       message: 'Chapter not found.',
+  //       success: false,
+  //       status: 404,
+  //     });
+  //   }
+
+  //   // APPLY AMENDMENTS RECURSIVELY
+
+  //   // Chapter
+  //   const resolvedChapter = await this.amendmentsService.resolveFromBase({
+  //     _id: response._id,
+  //     title: response.title,
+  //     level: 'CHAPTER',
+  //   });
+
+  //   // Parts
+  //   resolvedChapter.parts = await Promise.all(
+  //     chapter.parts.map(async (part) => {
+  //       const resolvedPart = await this.amendmentsService.resolveFromBase({
+  //         _id: part._id,
+  //         title: part.title,
+  //         level: 'PART',
+  //       });
+
+  //       resolvedPart.sections = await Promise.all(
+  //         part.sections.map(async (section) => {
+  //           const resolvedSection =
+  //             await this.amendmentsService.resolveFromBase({
+  //               _id: section._id,
+  //               title: section.title,
+  //               content: section.content,
+  //               level: 'SECTION',
+  //             });
+
+  //           resolvedSection.subsections = await Promise.all(
+  //             section.subsections.map(async (sub) => {
+  //               return await this.amendmentsService.resolveFromBase({
+  //                 _id: sub._id,
+  //                 title: sub.title,
+  //                 content: sub.content,
+  //                 level: 'SUBSECTION',
+  //               });
+  //             }),
+  //           );
+
+  //           return resolvedSection;
+  //         }),
+  //       );
+
+  //       return resolvedPart;
+  //     }),
+  //   );
+
+  //   return resolvedChapter;
+  // }
+
+  // async findTaxLawChapterByChapterId(chapterId: string) {
+  //   const response =
+  //     await this.taxLawsRepository.findTaxLawChapterByChapterId(chapterId);
+
+  //   if (!response) {
+  //     throw new NotFoundException({
+  //       message: 'Chapter not found.',
+  //       success: false,
+  //       status: 404,
+  //     });
+  //   }
+
+  //   // ✅ Resolve Chapter
+  //   const resolvedChapter = await this.amendmentsService.resolveFromBase({
+  //     _id: response._id,
+  //     title: response.title,
+  //     level: 'CHAPTER',
+  //   });
+
+  //   // ✅ Attach parts manually
+  //   resolvedChapter.parts = await Promise.all(
+  //     response.parts.map(async (part) => {
+  //       const resolvedPart = await this.amendmentsService.resolveFromBase({
+  //         _id: part._id,
+  //         title: part.title,
+  //         level: 'PART',
+  //       });
+
+  //       // ✅ Attach sections
+  //       resolvedPart.sections = await Promise.all(
+  //         part.sections.map(async (section) => {
+  //           const resolvedSection =
+  //             await this.amendmentsService.resolveFromBase({
+  //               _id: section._id,
+  //               title: section.title,
+  //               content: section.content,
+  //               level: 'SECTION',
+  //             });
+
+  //           // ✅ Attach subsections
+  //           resolvedSection.subsections = await Promise.all(
+  //             section.subsections.map(async (sub) => {
+  //               return await this.amendmentsService.resolveFromBase({
+  //                 _id: sub._id,
+  //                 title: sub.title,
+  //                 content: sub.content,
+  //                 level: 'SUBSECTION',
+  //               });
+  //             }),
+  //           );
+
+  //           return resolvedSection;
+  //         }),
+  //       );
+
+  //       return resolvedPart;
+  //     }),
+  //   );
+
+  //   return resolvedChapter;
+  // }
+
+  async findTaxLawChapterByChapterId(chapterId: string, asOf?: Date) {
     const response =
       await this.taxLawsRepository.findTaxLawChapterByChapterId(chapterId);
 
@@ -227,7 +367,119 @@ export class TaxLawsService {
       });
     }
 
-    return response;
+    // ================================
+    // 1. COLLECT ALL IDS
+    // ================================
+    const entityIds: string[] = [];
+
+    entityIds.push(response._id.toString());
+
+    for (const part of response.parts || []) {
+      entityIds.push(part._id.toString());
+
+      for (const section of part.sections || []) {
+        entityIds.push(section._id.toString());
+
+        for (const sub of section.subsections || []) {
+          entityIds.push(sub._id.toString());
+        }
+      }
+    }
+
+    // ================================
+    // 2. FETCH ALL AMENDMENTS (1 QUERY)
+    // ================================
+    const amendments = await this.amendmentsService.findAmendmentsByEntityIds(
+      entityIds,
+      asOf,
+    );
+
+    console.log('ENTITY IDS:', entityIds);
+    console.log('AMENDMENTS FOUND:', amendments);
+
+    // ================================
+    // 3. GROUP AMENDMENTS BY entityId
+    // ================================
+    const amendmentMap = new Map<string, any[]>();
+
+    for (const amendment of amendments) {
+      const key = amendment.target.entityId.toString();
+
+      if (!amendmentMap.has(key)) {
+        amendmentMap.set(key, []);
+      }
+
+      amendmentMap.get(key)!.push(amendment);
+    }
+
+    // ================================
+    // 4. APPLY FUNCTION (LOCAL)
+    // ================================
+    const applyAmendments = (entity: any) => {
+      const entityAmendments = amendmentMap.get(entity._id.toString()) || [];
+
+      let title = entity.title;
+      let content = entity.content;
+
+      // Sort by date (important!)
+      entityAmendments.sort(
+        (a, b) =>
+          new Date(a.effectiveDate).getTime() -
+          new Date(b.effectiveDate).getTime(),
+      );
+
+      for (const amendment of entityAmendments) {
+        if (amendment.type === 'MODIFY') {
+          if (amendment.changes?.title !== undefined) {
+            title = amendment.changes.title;
+          }
+
+          if (amendment.changes?.content !== undefined) {
+            content = amendment.changes.content;
+          }
+        }
+
+        if (amendment.type === 'REPEAL') {
+          content = '[REPEALED]';
+        }
+      }
+
+      return {
+        ...entity,
+        title,
+        content,
+        meta: {
+          isAmended: entityAmendments.length > 0,
+          amendmentCount: entityAmendments.length,
+        },
+      };
+    };
+
+    // ================================
+    // 5. BUILD FINAL STRUCTURE
+    // ================================
+
+    const resolvedChapter = applyAmendments(response);
+
+    resolvedChapter.parts = (response.parts || []).map((part) => {
+      const resolvedPart = applyAmendments(part);
+
+      resolvedPart.sections = (part.sections || []).map((section) => {
+        const resolvedSection = applyAmendments(section);
+
+        resolvedSection.subsections = (section.subsections || []).map((sub) =>
+          applyAmendments(sub),
+        );
+
+        return resolvedSection;
+      });
+
+      return resolvedPart;
+    });
+
+    console.log('resolvedChapter:', resolvedChapter);
+
+    return resolvedChapter;
   }
 
   async updateChapter(chapterId: string, updateChapterDto: UpdateChapterDto) {

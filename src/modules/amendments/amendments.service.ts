@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { TaxLawsRepository } from '../tax-laws/repositories/tax-laws.repository';
 import { TaxLawsService } from '../tax-laws/tax-laws.service';
 import { CreateAmendmentDto } from './dtos/create-amendment.dto';
 import { AmendmentRepository } from './repositories/amendment.repository';
+import { AmendmentLean } from './schemas/amendment.schema';
 
 @Injectable()
 export class AmendmentsService {
   constructor(
     private readonly amendmentRepository: AmendmentRepository,
-    private readonly taxLawsRepository: TaxLawsRepository,
+
+    @Inject(forwardRef(() => TaxLawsService))
     private readonly taxLawsService: TaxLawsService,
   ) {}
 
@@ -40,7 +41,7 @@ export class AmendmentsService {
   async createAmendment(dto: CreateAmendmentDto, userId: string) {
     this.validateAmendment(dto);
 
-    const taxLawId = await this.taxLawsRepository.resolveTaxLawIdFromEntity(
+    const taxLawId = await this.taxLawsService.resolveTaxLawIdFromEntity(
       dto.target.level,
       dto.target.entityId,
     );
@@ -90,64 +91,6 @@ export class AmendmentsService {
   //     },
   //   };
   // }
-
-  async resolve(entityId: string, asOf?: Date) {
-    // 1. Get base entity from tax law service
-    const baseEntity = await this.taxLawsService.getEntityBase(entityId);
-
-    // 2. Get amendments
-    const amendments = await this.amendmentRepository.findApplicable(
-      entityId,
-      asOf,
-    );
-
-    // 3. Apply amendments
-    let title = baseEntity.title;
-    let content = baseEntity.content;
-
-    for (const amendment of amendments) {
-      switch (amendment.type) {
-        case 'MODIFY':
-          if (
-            amendment.target.level === 'CHAPTER' ||
-            amendment.target.level === 'PART'
-          ) {
-            title = amendment.content;
-          } else {
-            content = amendment.content;
-          }
-          break;
-
-        case 'DELETE':
-          if (
-            amendment.target.level === 'CHAPTER' ||
-            amendment.target.level === 'PART'
-          ) {
-            title = '';
-          } else {
-            content = '';
-          }
-          break;
-
-        case 'INSERT':
-          if (content !== undefined) {
-            content += '\n' + amendment.content;
-          }
-          break;
-      }
-    }
-
-    return {
-      entityId,
-      level: baseEntity.level,
-      title,
-      content,
-      meta: {
-        isAmended: amendments.length > 0,
-        amendmentCount: amendments.length,
-      },
-    };
-  }
 
   // async resolveEntity(
   //   entityId: string,
@@ -214,4 +157,128 @@ export class AmendmentsService {
       throw new Error('At least title or content must be provided');
     }
   }
+
+  async resolve(entityId: string, asOf?: Date) {
+    // 1. Get base entity from tax law service
+    const baseEntity = await this.taxLawsService.getEntityBase(entityId);
+
+    // 2. Get amendments
+    const amendments = await this.amendmentRepository.findApplicable(
+      entityId,
+      asOf,
+    );
+
+    // 3. Apply amendments
+    let title = baseEntity.title;
+    let content = baseEntity.content;
+
+    for (const amendment of amendments) {
+      switch (amendment.type) {
+        case 'MODIFY':
+          if (
+            amendment.target.level === 'CHAPTER' ||
+            amendment.target.level === 'PART'
+          ) {
+            title = amendment.content;
+          } else {
+            content = amendment.content;
+          }
+          break;
+
+        case 'DELETE':
+          if (
+            amendment.target.level === 'CHAPTER' ||
+            amendment.target.level === 'PART'
+          ) {
+            title = '';
+          } else {
+            content = '';
+          }
+          break;
+
+        case 'INSERT':
+          if (content !== undefined) {
+            content += '\n' + amendment.content;
+          }
+          break;
+      }
+    }
+
+    return {
+      entityId,
+      level: baseEntity.level,
+      title,
+      content,
+      meta: {
+        isAmended: amendments.length > 0,
+        amendmentCount: amendments.length,
+      },
+    };
+  }
+
+  async findAmendmentsByEntityIds(
+    entityIds: string[],
+    asOf?: Date,
+  ): Promise<AmendmentLean[]> {
+    const ids = entityIds.map((id) => new Types.ObjectId(id));
+    const response = await this.amendmentRepository.findAmendmentsByEntityIds(
+      ids,
+      asOf,
+    );
+
+    return response;
+  }
+
+  // async resolveFromBase(
+  //   entity: {
+  //     _id: string;
+  //     title?: string;
+  //     content?: string;
+  //     level: TaxLawLevels;
+  //   },
+  //   asOf?: Date,
+  // ) {
+  //   const amendments = await this.amendmentRepository.findApplicableFromBase(
+  //     entity._id,
+  //     asOf,
+  //   );
+
+  //   let title = entity.title;
+  //   let content = entity.content;
+
+  //   for (const amendment of amendments) {
+  //     switch (amendment.type) {
+  //       case 'MODIFY':
+  //         if (amendment.changes?.title !== undefined) {
+  //           title = amendment.changes.title;
+  //         }
+
+  //         if (amendment.changes?.content !== undefined) {
+  //           content = amendment.changes.content;
+  //         }
+  //         break;
+
+  //       case 'DELETE':
+  //         title = '';
+  //         content = '';
+  //         break;
+
+  //       case 'INSERT':
+  //         if (content) {
+  //           content += '\n' + (amendment.changes?.content || '');
+  //         }
+  //         break;
+  //     }
+  //   }
+
+  //   return {
+  //     ...entity,
+  //     title,
+  //     content,
+  //     meta: {
+  //       isAmended: amendments.length > 0,
+  //       amendmentCount: amendments.length,
+  //     },
+  //   };
+  // }
 }

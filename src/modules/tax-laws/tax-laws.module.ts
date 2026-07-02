@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bull';
 import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AmendmentsModule } from '../amendments/amendments.module';
 import { DailyTipsModule } from '../daily-tips/daily-tips.module';
 import { DocumentProcessingModule } from '../document-processing/document-processing.module';
 import { TaxLawProcessor } from './processors/tax-law.processor';
@@ -32,6 +33,7 @@ import { TaxLawsService } from './tax-laws.service';
     }),
     DocumentProcessingModule,
     forwardRef(() => DailyTipsModule),
+    forwardRef(() => AmendmentsModule),
   ],
   controllers: [TaxLawsController],
   providers: [

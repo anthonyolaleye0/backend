@@ -538,15 +538,107 @@ export class TaxLawsRepository {
     return structure[0] || null;
   }
 
+  // async findTaxLawChapterByChapterId(chapterId: string) {
+  //   const id = new Types.ObjectId(chapterId);
+
+  //   const result = await this.chapterModel.aggregate([
+  //     {
+  //       $match: { _id: id },
+  //     },
+
+  //     // 🔹 Join Parts
+  //     {
+  //       $lookup: {
+  //         from: 'parts',
+  //         localField: '_id',
+  //         foreignField: 'chapter',
+  //         as: 'parts',
+  //       },
+  //     },
+
+  //     // 🔹 Join Sections inside each Part
+  //     {
+  //       $lookup: {
+  //         from: 'sections',
+  //         localField: 'parts._id',
+  //         foreignField: 'part',
+  //         as: 'sections',
+  //       },
+  //     },
+
+  //     // 🔹 Join Subsections
+  //     {
+  //       $lookup: {
+  //         from: 'subsections',
+  //         localField: 'sections._id',
+  //         foreignField: 'section',
+  //         as: 'subsections',
+  //       },
+  //     },
+
+  //     // 🔥 Restructure (VERY IMPORTANT)
+  //     {
+  //       $addFields: {
+  //         parts: {
+  //           $map: {
+  //             input: '$parts',
+  //             as: 'part',
+  //             in: {
+  //               _id: '$$part._id',
+  //               title: '$$part.title',
+  //               number: '$$part.number',
+
+  //               sections: {
+  //                 $map: {
+  //                   input: {
+  //                     $filter: {
+  //                       input: '$sections',
+  //                       as: 'sec',
+  //                       cond: { $eq: ['$$sec.part', '$$part._id'] },
+  //                     },
+  //                   },
+  //                   as: 'section',
+  //                   in: {
+  //                     _id: '$$section._id',
+  //                     title: '$$section.title',
+  //                     number: '$$section.number',
+
+  //                     subsections: {
+  //                       $filter: {
+  //                         input: '$subsections',
+  //                         as: 'sub',
+  //                         cond: {
+  //                           $eq: ['$$sub.section', '$$section._id'],
+  //                         },
+  //                       },
+  //                     },
+  //                   },
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+
+  //     // 🔹 Clean up unwanted flat arrays
+  //     {
+  //       $project: {
+  //         sections: 0,
+  //         subsections: 0,
+  //       },
+  //     },
+  //   ]);
+
+  //   return result[0];
+  // }
+
   async findTaxLawChapterByChapterId(chapterId: string) {
     const id = new Types.ObjectId(chapterId);
 
     const result = await this.chapterModel.aggregate([
-      {
-        $match: { _id: id },
-      },
+      { $match: { _id: id } },
 
-      // 🔹 Join Parts
       {
         $lookup: {
           from: 'parts',
@@ -555,8 +647,6 @@ export class TaxLawsRepository {
           as: 'parts',
         },
       },
-
-      // 🔹 Join Sections inside each Part
       {
         $lookup: {
           from: 'sections',
@@ -565,8 +655,6 @@ export class TaxLawsRepository {
           as: 'sections',
         },
       },
-
-      // 🔹 Join Subsections
       {
         $lookup: {
           from: 'subsections',
@@ -576,7 +664,6 @@ export class TaxLawsRepository {
         },
       },
 
-      // 🔥 Restructure (VERY IMPORTANT)
       {
         $addFields: {
           parts: {
@@ -602,13 +689,25 @@ export class TaxLawsRepository {
                       _id: '$$section._id',
                       title: '$$section.title',
                       number: '$$section.number',
+                      content: '$$section.content',
 
                       subsections: {
-                        $filter: {
-                          input: '$subsections',
+                        $map: {
+                          input: {
+                            $filter: {
+                              input: '$subsections',
+                              as: 'sub',
+                              cond: {
+                                $eq: ['$$sub.section', '$$section._id'],
+                              },
+                            },
+                          },
                           as: 'sub',
-                          cond: {
-                            $eq: ['$$sub.section', '$$section._id'],
+                          in: {
+                            _id: '$$sub._id',
+                            title: '$$sub.title',
+                            number: '$$sub.number',
+                            content: '$$sub.content',
                           },
                         },
                       },
@@ -621,7 +720,6 @@ export class TaxLawsRepository {
         },
       },
 
-      // 🔹 Clean up unwanted flat arrays
       {
         $project: {
           sections: 0,
@@ -630,7 +728,9 @@ export class TaxLawsRepository {
       },
     ]);
 
-    return result[0];
+    const chapter = result[0];
+
+    return chapter;
   }
 
   async findTaxLaws(queryWithPaginationDto: QueryWithPaginationDto): Promise<{

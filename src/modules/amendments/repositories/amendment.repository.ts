@@ -6,6 +6,7 @@ import {
   Amendment,
   AmendmentDocument,
   AmendmentLean,
+  ResolvedEntity,
 } from '../schemas/amendment.schema';
 
 @Injectable()
@@ -48,6 +49,21 @@ export class AmendmentRepository {
     return response;
   }
 
+  async findAmendmentsByEntityIds(
+    entityIds: Types.ObjectId[],
+    asOf?: Date,
+  ): Promise<AmendmentLean[]> {
+    const amendments = await this.amendmentModel
+      .find({
+        'target.entityId': { $in: entityIds },
+        ...(asOf && { effectiveDate: { $lte: asOf } }),
+      })
+      .sort({ effectiveDate: 1 })
+      .lean<AmendmentLean[]>();
+
+    return amendments;
+  }
+
   async findAmendmentsByTaxLaw(taxLawId: string): Promise<AmendmentDocument[]> {
     const response = await this.amendmentModel.find({
       taxLawId,
@@ -74,6 +90,26 @@ export class AmendmentRepository {
       .find(query)
       .sort({ effectiveDate: 1 })
       .lean<AmendmentLean[]>()
+      .exec();
+  }
+
+  async findApplicableFromBase(
+    entityId: string,
+    asOf?: Date,
+  ): Promise<ResolvedEntity[]> {
+    const query: any = {
+      'target.entityId': entityId,
+      isActive: true,
+    };
+
+    if (asOf) {
+      query.effectiveDate = { $lte: asOf };
+    }
+
+    return await this.amendmentModel
+      .find(query)
+      .sort({ effectiveDate: 1 })
+      .lean<ResolvedEntity[]>()
       .exec();
   }
 

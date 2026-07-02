@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TaxLawsModule } from '../tax-laws/tax-laws.module';
 import { AmendmentsController } from './amendments.controller';
@@ -11,9 +11,10 @@ import { Amendment, AmendmentSchema } from './schemas/amendment.schema';
     MongooseModule.forFeature([
       { name: Amendment.name, schema: AmendmentSchema },
     ]),
-    TaxLawsModule,
+    forwardRef(() => TaxLawsModule),
   ],
   controllers: [AmendmentsController],
   providers: [AmendmentsService, AmendmentRepository],
+  exports: [AmendmentsService, AmendmentRepository],
 })
 export class AmendmentsModule {}
