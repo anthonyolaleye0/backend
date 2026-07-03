@@ -329,6 +329,33 @@ export class TaxLawsController {
     return response;
   }
 
+  @Get('get-tax-law-chapter-history-by-chapter-id/:chapterId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin, Role.user)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law chapter history fetched successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Fetching tax law chapter history.',
+    description:
+      'This is the endpoint to fetch history of a chapter in a tax law.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law chapter history fetched successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to fetch tax law chapter history.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async getChapterHistory(@Param('chapterId') chapterId: string) {
+    return await this.taxLawsService.getChapterHistory(chapterId);
+  }
   @Get('get-tax-law-chapter-by-chapter-id/:chapterId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.admin, Role.user)
@@ -352,8 +379,14 @@ export class TaxLawsController {
     status: 500,
     description: 'Internal server error',
   })
-  async findTaxLawChapterByChapterId(@Param('chapterId') chapterId: string) {
-    return await this.taxLawsService.findTaxLawChapterByChapterId(chapterId);
+  async findTaxLawChapterByChapterId(
+    @Param('chapterId') chapterId: string,
+    @Query('asOf') asOf?: string,
+  ) {
+    return await this.taxLawsService.findTaxLawChapterByChapterId(
+      chapterId,
+      asOf ? new Date(asOf) : undefined,
+    );
   }
 
   @Put('update-tax-law-subsection-by-subsection-id/:subsectionId')

@@ -355,7 +355,9 @@ export class TaxLawsService {
   //   return resolvedChapter;
   // }
 
-  async findTaxLawChapterByChapterId(chapterId: string, asOf?: Date) {
+  async findTaxLawChapterByChapterId(chapterId: string, asOf?: Date | string) {
+    const asOfDate = asOf ? new Date(asOf) : null;
+
     const response =
       await this.taxLawsRepository.findTaxLawChapterByChapterId(chapterId);
 
@@ -391,7 +393,7 @@ export class TaxLawsService {
     // ================================
     const amendments = await this.amendmentsService.findAmendmentsByEntityIds(
       entityIds,
-      asOf,
+      asOfDate || undefined,
     );
 
     console.log('ENTITY IDS:', entityIds);
@@ -422,13 +424,17 @@ export class TaxLawsService {
       let content = entity.content;
 
       // Sort by date (important!)
-      entityAmendments.sort(
-        (a, b) =>
-          new Date(a.effectiveDate).getTime() -
-          new Date(b.effectiveDate).getTime(),
-      );
+      // entityAmendments.sort(
+      //   (a, b) =>
+      //     new Date(a.effectiveDate).getTime() -
+      //     new Date(b.effectiveDate).getTime(),
+      // );
 
       for (const amendment of entityAmendments) {
+        if (asOfDate && new Date(amendment.effectiveDate) > asOfDate) {
+          continue;
+        }
+
         if (amendment.type === 'MODIFY') {
           if (amendment.changes?.title !== undefined) {
             title = amendment.changes.title;
@@ -446,6 +452,10 @@ export class TaxLawsService {
 
       return {
         ...entity,
+        original: {
+          title: entity.title,
+          content: entity.content,
+        },
         title,
         content,
         meta: {
@@ -480,6 +490,82 @@ export class TaxLawsService {
     console.log('resolvedChapter:', resolvedChapter);
 
     return resolvedChapter;
+  }
+
+  async getChapterHistory(chapterId: string) {
+    // ================================
+    // 1. FETCH FULL CHAPTER TREE
+    // ================================
+    const chapter =
+      await this.taxLawsRepository.findTaxLawChapterByChapterId(chapterId);
+
+    if (!chapter) {
+      throw new NotFoundException({
+        message: 'Chapter not found',
+        success: false,
+        status: 404,
+      });
+    }
+
+    // ================================
+    // 2. COLLECT ENTITY IDS
+    // ================================
+    const entityIds: string[] = [];
+
+    entityIds.push(chapter._id.toString());
+
+    for (const part of chapter.parts || []) {
+      entityIds.push(part._id.toString());
+
+      for (const section of part.sections || []) {
+        entityIds.push(section._id.toString());
+
+        for (const sub of section.subsections || []) {
+          entityIds.push(sub._id.toString());
+        }
+      }
+    }
+
+    // ================================
+    // 3. FETCH ALL AMENDMENTS (ONE QUERY)
+    // ================================
+    const amendments =
+      await this.amendmentsService.findHistoryByEntityIds(entityIds);
+
+    // ================================
+    // 4. SORT BY DATE (IMPORTANT)
+    // ================================
+    amendments.sort(
+      (a, b) =>
+        new Date(a.effectiveDate).getTime() -
+        new Date(b.effectiveDate).getTime(),
+    );
+
+    // ================================
+    // 5. BUILD TIMELINE
+    // ================================
+    const timeline = amendments.map((amendment) => ({
+      amendmentId: amendment._id,
+      entityId: amendment.target.entityId,
+      target: amendment.target,
+      type: amendment.type, // MODIFY | REPEAL | ADD
+      effectiveDate: amendment.effectiveDate,
+      description: amendment.description || null,
+      metadata: amendment.metadata || {},
+    }));
+
+    const response = {
+      chapterId,
+      totalAmendments: timeline.length,
+      timeline,
+    };
+
+    console.log('response:', response);
+
+    return {
+      success: true,
+      data: response,
+    };
   }
 
   async updateChapter(chapterId: string, updateChapterDto: UpdateChapterDto) {

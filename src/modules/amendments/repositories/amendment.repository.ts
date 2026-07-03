@@ -49,6 +49,18 @@ export class AmendmentRepository {
     return response;
   }
 
+  async findHistoryByEntityIds(entityIds: string[], asOf?: Date) {
+    const query: any = {
+      'target.entityId': { $in: entityIds },
+    };
+
+    if (asOf) {
+      query.effectiveDate = { $lte: asOf };
+    }
+
+    return this.amendmentModel.find(query).lean();
+  }
+
   async findAmendmentsByEntityIds(
     entityIds: Types.ObjectId[],
     asOf?: Date,

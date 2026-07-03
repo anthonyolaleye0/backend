@@ -229,6 +229,15 @@ export class AmendmentsService {
     return response;
   }
 
+  async findHistoryByEntityIds(entityIds: string[], asOf?: Date) {
+    const response = await this.amendmentRepository.findHistoryByEntityIds(
+      entityIds,
+      asOf,
+    );
+
+    return response;
+  }
+
   // async resolveFromBase(
   //   entity: {
   //     _id: string;
