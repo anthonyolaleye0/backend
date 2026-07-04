@@ -247,9 +247,14 @@ export class TaxLawsController {
     status: 500,
     description: 'Internal server error',
   })
-  async getTaxLawSectionBySectionId(@Param('sectionId') sectionId: string) {
-    const section =
-      await this.taxLawsService.getTaxLawSectionBySectionId(sectionId);
+  async getTaxLawSectionBySectionId(
+    @Param('sectionId') sectionId: string,
+    @Query('asOf') asOf?: string,
+  ) {
+    const section = await this.taxLawsService.getTaxLawSectionBySectionId(
+      sectionId,
+      asOf ? new Date(asOf) : undefined,
+    );
 
     return section;
   }
@@ -355,6 +360,33 @@ export class TaxLawsController {
   })
   async getChapterHistory(@Param('chapterId') chapterId: string) {
     return await this.taxLawsService.getChapterHistory(chapterId);
+  }
+  @Get('get-tax-law-section-history-by-section-id/:sectionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin, Role.user)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law section history fetched successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Fetching tax law section history.',
+    description:
+      'This is the endpoint to fetch history of a section in a tax law.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law section history fetched successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to fetch tax law section history.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async getSectionHistory(@Param('sectionId') sectionId: string) {
+    return await this.taxLawsService.getSectionHistory(sectionId);
   }
   @Get('get-tax-law-chapter-by-chapter-id/:chapterId')
   @UseGuards(JwtAuthGuard, RolesGuard)

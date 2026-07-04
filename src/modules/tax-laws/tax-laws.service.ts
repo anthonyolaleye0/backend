@@ -165,18 +165,124 @@ export class TaxLawsService {
     );
     return taxLaws;
   }
-  async getTaxLawSectionBySectionId(sectionId: string) {
-    const taxLaws =
+  // async getTaxLawSectionBySectionId(sectionId: string) {
+  //   const taxLaws =
+  //     await this.taxLawsRepository.getTaxLawSectionBySectionId(sectionId);
+
+  //   if (!taxLaws) {
+  //     throw new NotFoundException({
+  //       message: 'Section not found.',
+  //       success: false,
+  //       status: 404,
+  //     });
+  //   }
+  //   return taxLaws;
+  // }
+
+  async getTaxLawSectionBySectionId(sectionId: string, asOf?: Date) {
+    const response =
       await this.taxLawsRepository.getTaxLawSectionBySectionId(sectionId);
 
-    if (!taxLaws) {
+    if (!response) {
       throw new NotFoundException({
         message: 'Section not found.',
         success: false,
         status: 404,
       });
     }
-    return taxLaws;
+
+    // ================================
+    // 1. COLLECT ENTITY IDS
+    // ================================
+    const entityIds: string[] = [];
+
+    entityIds.push(response._id.toString());
+
+    for (const sub of response.subsections || []) {
+      entityIds.push(sub._id.toString());
+    }
+
+    // ================================
+    // 2. FETCH AMENDMENTS
+    // ================================
+    const amendments = await this.amendmentsService.findAmendmentsByEntityIds(
+      entityIds,
+      asOf,
+    );
+
+    // ================================
+    // 3. GROUP BY ENTITY ID
+    // ================================
+    const amendmentMap = new Map<string, any[]>();
+
+    for (const amendment of amendments) {
+      const key = amendment.target.entityId.toString();
+
+      if (!amendmentMap.has(key)) {
+        amendmentMap.set(key, []);
+      }
+
+      amendmentMap.get(key)!.push(amendment);
+    }
+
+    // ================================
+    // 4. APPLY AMENDMENTS FUNCTION
+    // ================================
+    const applyAmendments = (entity: any) => {
+      const entityAmendments = amendmentMap.get(entity._id.toString()) || [];
+
+      let title = entity.title;
+      let content = entity.content;
+
+      // Sort by date
+      entityAmendments.sort(
+        (a, b) =>
+          new Date(a.effectiveDate).getTime() -
+          new Date(b.effectiveDate).getTime(),
+      );
+
+      for (const amendment of entityAmendments) {
+        if (amendment.type === 'MODIFY') {
+          if (amendment.changes?.title !== undefined) {
+            title = amendment.changes.title;
+          }
+
+          if (amendment.changes?.content !== undefined) {
+            content = amendment.changes.content;
+          }
+        }
+
+        if (amendment.type === 'REPEAL') {
+          content = '[REPEALED]';
+        }
+      }
+
+      return {
+        ...entity,
+        original: {
+          title: entity.title,
+          content: entity.content,
+        },
+        title,
+        content,
+        meta: {
+          isAmended: entityAmendments.length > 0,
+          amendmentCount: entityAmendments.length,
+        },
+      };
+    };
+
+    // ================================
+    // 5. APPLY TO SECTION + SUBSECTIONS
+    // ================================
+
+    const resolvedSection = applyAmendments(response);
+
+    resolvedSection.subsections = (response.subsections || []).map((sub) =>
+      applyAmendments(sub),
+    );
+
+    return resolvedSection;
   }
   async getTaxLawsTableOfCotent(taxLawId: string) {
     const taxLaws =
@@ -492,6 +598,71 @@ export class TaxLawsService {
     return resolvedChapter;
   }
 
+  async getSectionHistory(sectionId: string) {
+    // ================================
+    // 1. FETCH SECTION + SUBSECTIONS
+    // ================================
+    const section =
+      await this.taxLawsRepository.getTaxLawSectionBySectionId(sectionId);
+
+    if (!section) {
+      throw new NotFoundException({
+        message: 'Section not found',
+        success: false,
+        status: 404,
+      });
+    }
+
+    // ================================
+    // 2. COLLECT ENTITY IDS
+    // ================================
+    const entityIds: string[] = [];
+
+    entityIds.push(section._id.toString());
+
+    for (const sub of section.subsections || []) {
+      entityIds.push(sub._id.toString());
+    }
+
+    // ================================
+    // 3. FETCH ALL AMENDMENTS (ONE QUERY)
+    // ================================
+    const amendments =
+      await this.amendmentsService.findHistoryByEntityIds(entityIds);
+
+    // ================================
+    // 4. SORT BY DATE
+    // ================================
+    amendments.sort(
+      (a, b) =>
+        new Date(a.effectiveDate).getTime() -
+        new Date(b.effectiveDate).getTime(),
+    );
+
+    // ================================
+    // 5. BUILD TIMELINE
+    // ================================
+    const timeline = amendments.map((amendment) => ({
+      amendmentId: amendment._id,
+      entityId: amendment.target.entityId,
+      target: amendment.target, // includes level (SECTION / SUBSECTION)
+      type: amendment.type, // MODIFY | REPEAL | ADD
+      effectiveDate: amendment.effectiveDate,
+      description: amendment.description || null,
+      metadata: amendment.metadata || {},
+    }));
+
+    const response = {
+      sectionId,
+      totalAmendments: timeline.length,
+      timeline,
+    };
+
+    return {
+      success: true,
+      data: response,
+    };
+  }
   async getChapterHistory(chapterId: string) {
     // ================================
     // 1. FETCH FULL CHAPTER TREE
