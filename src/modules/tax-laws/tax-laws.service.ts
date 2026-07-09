@@ -215,6 +215,14 @@ export class TaxLawsService {
     // ================================
     const amendmentMap = new Map<string, any[]>();
 
+    console.log('MAP KEYS:', [...amendmentMap.keys()]);
+    console.log(
+      'SUB IDs:',
+      (response.subsections || []).map((s) => s._id.toString()),
+    );
+
+    console.log('asOf:', asOf);
+
     for (const amendment of amendments) {
       const key = amendment.target.entityId.toString();
 
@@ -225,14 +233,16 @@ export class TaxLawsService {
       amendmentMap.get(key)!.push(amendment);
     }
 
+    console.log('MAP KEYS:', [...amendmentMap.keys()]);
+
     // ================================
     // 4. APPLY AMENDMENTS FUNCTION
     // ================================
     const applyAmendments = (entity: any) => {
       const entityAmendments = amendmentMap.get(entity._id.toString()) || [];
 
-      let title = entity.title;
-      let content = entity.content;
+      let title = entity.title ?? entity.subsection?.title;
+      let content = entity.content ?? entity.subsection?.content;
 
       // Sort by date
       entityAmendments.sort(
@@ -259,12 +269,20 @@ export class TaxLawsService {
 
       return {
         ...entity,
-        original: {
-          title: entity.title,
-          content: entity.content,
-        },
         title,
         content,
+
+        ...(entity.subsection && {
+          subsection: {
+            ...entity.subsection,
+            title,
+            content,
+          },
+        }),
+        original: {
+          title: entity.title ?? entity.subsection?.title,
+          content: entity.content ?? entity.subsection?.content,
+        },
         meta: {
           isAmended: entityAmendments.length > 0,
           amendmentCount: entityAmendments.length,
@@ -283,6 +301,75 @@ export class TaxLawsService {
     );
 
     return resolvedSection;
+  }
+  async getTaxLawSubSectionBySubSectionId(subSectionId: string, asOf?: Date) {
+    // ================================
+    // 1. FETCH SUBSECTION
+    // ================================
+    const subSection =
+      await this.taxLawsRepository.getTaxLawSubSectionBySubSectionId(
+        subSectionId,
+      );
+
+    if (!subSection) {
+      throw new NotFoundException({
+        message: 'Sub section not found.',
+        success: false,
+        status: 404,
+      });
+    }
+
+    // ================================
+    // 2. FETCH AMENDMENTS FOR THIS SUBSECTION ONLY
+    // ================================
+    const amendments = await this.amendmentsService.findAmendmentsByEntityIds(
+      [subSection._id.toString()],
+      asOf,
+    );
+
+    // ================================
+    // 3. SORT AMENDMENTS (IMPORTANT)
+    // ================================
+    amendments.sort(
+      (a, b) =>
+        new Date(a.effectiveDate).getTime() -
+        new Date(b.effectiveDate).getTime(),
+    );
+
+    // ================================
+    // 4. APPLY AMENDMENTS
+    // ================================
+    let content = subSection.content;
+
+    for (const amendment of amendments) {
+      if (amendment.type === 'MODIFY') {
+        if (amendment.changes?.content !== undefined) {
+          content = amendment.changes.content;
+        }
+      }
+
+      if (amendment.type === 'DELETE') {
+        content = '[REPEALED]';
+      }
+    }
+
+    // ================================
+    // 5. RETURN RESOLVED SUBSECTION
+    // ================================
+    return {
+      ...(subSection.toObject?.() ?? subSection),
+
+      content,
+
+      original: {
+        content: subSection.content,
+      },
+
+      meta: {
+        isAmended: amendments.length > 0,
+        amendmentCount: amendments.length,
+      },
+    };
   }
   async getTaxLawsTableOfCotent(taxLawId: string) {
     const taxLaws =
@@ -661,6 +748,100 @@ export class TaxLawsService {
     return {
       success: true,
       data: response,
+    };
+  }
+
+  async getSubSectionHistory(subSectionId: string) {
+    console.log('subSectionId:', subSectionId);
+
+    // ================================
+    // 1. FETCH SUBSECTION (ORIGINAL)
+    // ================================
+    const subSection =
+      await this.taxLawsRepository.getSubSectionBySubSectionId(subSectionId);
+
+    if (!subSection) {
+      throw new NotFoundException({
+        message: 'Sub section not found',
+        success: false,
+        status: 404,
+      });
+    }
+
+    // ================================
+    // 2. FETCH AMENDMENTS
+    // ================================
+    const amendments = await this.amendmentsService.findHistoryByEntityIds([
+      subSection._id.toString(),
+    ]);
+
+    // ================================
+    // 3. SORT AMENDMENTS (ASC)
+    // ================================
+    amendments.sort(
+      (a, b) =>
+        new Date(a.effectiveDate).getTime() -
+        new Date(b.effectiveDate).getTime(),
+    );
+
+    // ================================
+    // 4. BUILD TIMELINE
+    // ================================
+
+    // 👉 START WITH ORIGINAL DOCUMENT
+    const timeline: any[] = [
+      {
+        version: 0,
+        type: 'ORIGINAL',
+        entityId: subSection._id,
+        // effectiveDate: subSection.createdAt || null, // fallback if exists
+        content: subSection.content,
+        description: 'Initial version',
+        metadata: {},
+      },
+    ];
+
+    // 👉 TRACK CURRENT STATE (for version building)
+    let currentContent = subSection.content;
+
+    amendments.forEach((amendment, index) => {
+      // Apply amendment to build version snapshot
+      if (amendment.type === 'MODIFY') {
+        if (amendment.changes?.content !== undefined) {
+          currentContent = amendment.changes.content;
+        }
+      }
+
+      if (amendment.type === 'DELETE') {
+        currentContent = '[REPEALED]';
+      }
+
+      timeline.push({
+        version: index + 1,
+        amendmentId: amendment._id,
+        entityId: amendment.target.entityId,
+        type: amendment.type,
+        effectiveDate: amendment.effectiveDate,
+        description: amendment.description || null,
+        content: currentContent, // ✅ snapshot AFTER applying amendment
+        changes: amendment.changes || null,
+        metadata: amendment.metadata || {},
+      });
+    });
+
+    // ================================
+    // 5. RESPONSE
+    // ================================
+    return {
+      success: true,
+      data: {
+        subSectionId: subSection._id,
+        totalVersions: timeline.length,
+        timeline,
+        target: {
+          level: 'SUBSECTION',
+        },
+      },
     };
   }
   async getChapterHistory(chapterId: string) {

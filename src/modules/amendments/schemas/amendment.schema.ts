@@ -33,6 +33,10 @@ export type AmendmentLean = {
       subSectionNumber?: number;
     };
   };
+  changes: {
+    content?: string;
+    title?: string;
+  };
   type: 'INSERT' | 'DELETE' | 'MODIFY';
   content: string;
   effectiveDate: Date;

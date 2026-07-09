@@ -201,6 +201,14 @@ export class TaxLawsRepository {
     }
   }
 
+  async getTaxLawSubSectionBySubSectionId(subSectionId: string) {
+    const response = await this.subSectionModel.findOne({
+      _id: new Types.ObjectId(subSectionId),
+    });
+
+    return response;
+  }
+
   async createFullTaxLawDocumentWithoutTransaction(parsed: any) {
     try {
       // 1️⃣ Create the Parent TaxLaw
@@ -1667,6 +1675,9 @@ This allows the user to see the structure and click where they want to go.
   ): Promise<SubSectionDocument | null> {
     const id = new Types.ObjectId(subSectionId);
     const subSection = await this.subSectionModel.findById(id);
+
+    console.log('subSection:', subSection);
+
     return subSection;
   }
   async createPartByChapterId(

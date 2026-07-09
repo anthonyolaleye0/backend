@@ -73,6 +73,9 @@ export class AmendmentRepository {
       .sort({ effectiveDate: 1 })
       .lean<AmendmentLean[]>();
 
+    const test = await this.amendmentModel.findOne().lean();
+    console.log('test DB:', JSON.stringify(test, null, 2));
+
     return amendments;
   }
 

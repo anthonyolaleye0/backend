@@ -258,6 +258,41 @@ export class TaxLawsController {
 
     return section;
   }
+  @Get('get-tax-law-sub-section-by-subSectionId/:subSectionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin, Role.user)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law sub section fetched successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get tax law sub section',
+    description:
+      'This is the endpoint for fetching a sub section inside a tax law.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law sub section fetched successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to fetch tax law sub section.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async getTaxLawSubSectionBySubSectionId(
+    @Param('subSectionId') subSectionId: string,
+    @Query('asOf') asOf?: string,
+  ) {
+    const section = await this.taxLawsService.getTaxLawSubSectionBySubSectionId(
+      subSectionId,
+      asOf ? new Date(asOf) : undefined,
+    );
+
+    return section;
+  }
 
   @Get('search-tax-law/:taxLawId/search')
   async searchTaxLaw(@Query() queryWithPaginationDto: QueryWithPaginationDto) {
@@ -387,6 +422,33 @@ export class TaxLawsController {
   })
   async getSectionHistory(@Param('sectionId') sectionId: string) {
     return await this.taxLawsService.getSectionHistory(sectionId);
+  }
+  @Get('get-tax-law-sub-section-history-by-sub-section-id/:subSectionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin, Role.user)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law sub section history fetched successfully.')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Fetching tax law sub section history.',
+    description:
+      'This is the endpoint to fetch history of a sub section in a tax law.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax law sub section history fetched successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unable to fetch tax law sub section history.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async getSubSectionHistory(@Param('subSectionId') subSectionId: string) {
+    return await this.taxLawsService.getSubSectionHistory(subSectionId);
   }
   @Get('get-tax-law-chapter-by-chapter-id/:chapterId')
   @UseGuards(JwtAuthGuard, RolesGuard)
