@@ -12,6 +12,12 @@ export class Schedule {
   title?: string;
 
   @Prop()
+  createdAt?: Date;
+
+  @Prop()
+  updatedAt?: Date;
+
+  @Prop()
   number?: string;
 
   @Prop({ trim: true })

@@ -26,6 +26,12 @@ export class Section {
   @Prop({ type: Types.ObjectId, ref: 'Part', required: true })
   part!: Types.ObjectId;
 
+  @Prop()
+  createdAt?: Date;
+
+  @Prop()
+  updatedAt?: Date;
+
   @Prop({ trim: true })
   title?: string;
 

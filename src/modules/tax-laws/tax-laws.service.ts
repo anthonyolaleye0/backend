@@ -685,6 +685,72 @@ export class TaxLawsService {
     return resolvedChapter;
   }
 
+  // async getSectionHistory(sectionId: string) {
+  //   // ================================
+  //   // 1. FETCH SECTION + SUBSECTIONS
+  //   // ================================
+  //   const section =
+  //     await this.taxLawsRepository.getTaxLawSectionBySectionId(sectionId);
+
+  //   if (!section) {
+  //     throw new NotFoundException({
+  //       message: 'Section not found',
+  //       success: false,
+  //       status: 404,
+  //     });
+  //   }
+
+  //   // ================================
+  //   // 2. COLLECT ENTITY IDS
+  //   // ================================
+  //   const entityIds: string[] = [];
+
+  //   entityIds.push(section._id.toString());
+
+  //   for (const sub of section.subsections || []) {
+  //     entityIds.push(sub._id.toString());
+  //   }
+
+  //   // ================================
+  //   // 3. FETCH ALL AMENDMENTS (ONE QUERY)
+  //   // ================================
+  //   const amendments =
+  //     await this.amendmentsService.findHistoryByEntityIds(entityIds);
+
+  //   // ================================
+  //   // 4. SORT BY DATE
+  //   // ================================
+  //   amendments.sort(
+  //     (a, b) =>
+  //       new Date(a.effectiveDate).getTime() -
+  //       new Date(b.effectiveDate).getTime(),
+  //   );
+
+  //   // ================================
+  //   // 5. BUILD TIMELINE
+  //   // ================================
+  //   const timeline = amendments.map((amendment) => ({
+  //     amendmentId: amendment._id,
+  //     entityId: amendment.target.entityId,
+  //     target: amendment.target, // includes level (SECTION / SUBSECTION)
+  //     type: amendment.type, // MODIFY | REPEAL | ADD
+  //     effectiveDate: amendment.effectiveDate,
+  //     description: amendment.description || null,
+  //     metadata: amendment.metadata || {},
+  //   }));
+
+  //   const response = {
+  //     sectionId,
+  //     totalAmendments: timeline.length,
+  //     timeline,
+  //   };
+
+  //   return {
+  //     success: true,
+  //     data: response,
+  //   };
+  // }
+
   async getSectionHistory(sectionId: string) {
     // ================================
     // 1. FETCH SECTION + SUBSECTIONS
@@ -703,22 +769,19 @@ export class TaxLawsService {
     // ================================
     // 2. COLLECT ENTITY IDS
     // ================================
-    const entityIds: string[] = [];
-
-    entityIds.push(section._id.toString());
-
-    for (const sub of section.subsections || []) {
-      entityIds.push(sub._id.toString());
-    }
+    const entityIds: string[] = [
+      section._id.toString(),
+      ...(section.subsections || []).map((s) => s._id.toString()),
+    ];
 
     // ================================
-    // 3. FETCH ALL AMENDMENTS (ONE QUERY)
+    // 3. FETCH AMENDMENTS
     // ================================
     const amendments =
       await this.amendmentsService.findHistoryByEntityIds(entityIds);
 
     // ================================
-    // 4. SORT BY DATE
+    // 4. SORT BY DATE (ASC)
     // ================================
     amendments.sort(
       (a, b) =>
@@ -727,27 +790,99 @@ export class TaxLawsService {
     );
 
     // ================================
-    // 5. BUILD TIMELINE
+    // 5. INITIAL STATE (VERSION 0)
     // ================================
-    const timeline = amendments.map((amendment) => ({
-      amendmentId: amendment._id,
-      entityId: amendment.target.entityId,
-      target: amendment.target, // includes level (SECTION / SUBSECTION)
-      type: amendment.type, // MODIFY | REPEAL | ADD
-      effectiveDate: amendment.effectiveDate,
-      description: amendment.description || null,
-      metadata: amendment.metadata || {},
-    }));
+    let currentSectionContent = section.content;
 
-    const response = {
-      sectionId,
-      totalAmendments: timeline.length,
-      timeline,
-    };
+    const currentSubsections: Record<string, any> = {};
 
+    for (const sub of section.subsections || []) {
+      currentSubsections[sub._id.toString()] = {
+        ...(sub.toObject?.() ?? sub),
+      };
+    }
+
+    const timeline: any[] = [
+      {
+        version: 0,
+        type: 'ORIGINAL',
+        effectiveDate: section.createdAt || null,
+        section: {
+          ...(section.toObject?.() ?? section),
+          content: currentSectionContent,
+        },
+        subsections: Object.values(currentSubsections),
+        description: 'Initial version',
+        target: {
+          level: 'SECTION',
+        },
+      },
+    ];
+
+    // ================================
+    // 6. APPLY AMENDMENTS PROGRESSIVELY
+    // ================================
+    amendments.forEach((amendment, index) => {
+      const entityId = amendment.target.entityId.toString();
+
+      // 👉 SECTION AMENDMENT
+      if (entityId === section._id.toString()) {
+        if (amendment.type === 'MODIFY') {
+          if (amendment.changes?.content !== undefined) {
+            currentSectionContent = amendment.changes.content;
+          }
+        }
+
+        if (amendment.type === 'DELETE') {
+          currentSectionContent = '[REPEALED]';
+        }
+      }
+
+      // 👉 SUBSECTION AMENDMENT
+      if (currentSubsections[entityId]) {
+        const sub = currentSubsections[entityId];
+
+        if (amendment.type === 'MODIFY') {
+          if (amendment.changes?.content !== undefined) {
+            sub.content = amendment.changes.content;
+          }
+        }
+
+        if (amendment.type === 'DELETE') {
+          sub.content = '[REPEALED]';
+        }
+      }
+
+      // ================================
+      // PUSH SNAPSHOT
+      // ================================
+      timeline.push({
+        version: index + 1,
+        amendmentId: amendment._id,
+        type: amendment.type,
+        target: amendment.target,
+        effectiveDate: amendment.effectiveDate,
+        description: amendment.description || null,
+
+        section: {
+          ...(section.toObject?.() ?? section),
+          content: currentSectionContent,
+        },
+
+        subsections: Object.values(currentSubsections).map((s) => ({ ...s })),
+      });
+    });
+
+    // ================================
+    // 7. RESPONSE
+    // ================================
     return {
       success: true,
-      data: response,
+      data: {
+        sectionId: section._id,
+        totalVersions: timeline.length,
+        timeline,
+      },
     };
   }
 
@@ -794,7 +929,7 @@ export class TaxLawsService {
         version: 0,
         type: 'ORIGINAL',
         entityId: subSection._id,
-        // effectiveDate: subSection.createdAt || null, // fallback if exists
+        effectiveDate: subSection.createdAt || null, // fallback if exists
         content: subSection.content,
         description: 'Initial version',
         metadata: {},

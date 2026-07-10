@@ -11,6 +11,12 @@ export class SubSection {
   @Prop()
   number?: string; // e.g. "(1)", "(a)", "(i)"
 
+  @Prop()
+  createdAt?: Date;
+
+  @Prop()
+  updatedAt?: Date;
+
   @Prop({ trim: true })
   content?: string;
 

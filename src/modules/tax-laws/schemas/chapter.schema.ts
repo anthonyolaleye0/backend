@@ -11,6 +11,12 @@ export class Chapter {
   @Prop({ required: true, trim: true })
   title!: string;
 
+  @Prop()
+  createdAt?: Date;
+
+  @Prop()
+  updatedAt?: Date;
+
   @Prop({ required: true })
   order!: number;
 

@@ -14,6 +14,12 @@ export class TaxLaw {
   title!: string;
 
   @Prop()
+  createdAt?: Date;
+
+  @Prop()
+  updatedAt?: Date;
+
+  @Prop()
   year?: number;
 
   @Prop({ trim: true })

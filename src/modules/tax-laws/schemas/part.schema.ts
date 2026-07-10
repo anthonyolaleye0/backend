@@ -10,6 +10,12 @@ export class Part {
   @Prop({ trim: true })
   title?: string;
 
+  @Prop()
+  createdAt?: Date;
+
+  @Prop()
+  updatedAt?: Date;
+
   @Prop({ required: true })
   order!: number;
 
