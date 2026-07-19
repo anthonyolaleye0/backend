@@ -1,7 +1,7 @@
 import {
+  BadRequestException,
   Body,
   Controller,
-  FileTypeValidator,
   Get,
   HttpCode,
   HttpStatus,
@@ -23,6 +23,8 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { SuccessMessage } from '../../common/decorators/success-message.decorator';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
@@ -36,6 +38,7 @@ import { CreatePartDto } from './dtos/create-part.dto';
 import { CreateScheduleDto } from './dtos/create-schedule.dto';
 import { CreateSectionDto } from './dtos/create-section.dto';
 import { CreateSubSectionDto } from './dtos/create-subsection.dto';
+import { CreateTaxLawDto } from './dtos/create-taxlaw.dto';
 import { UpdateChapterDto } from './dtos/update-chapter.dto';
 import { UpdatePartDto } from './dtos/update-part.dto';
 import { UpdateScheduleDto } from './dtos/update-schedule.dto';
@@ -86,15 +89,73 @@ export class TaxLawsController {
     status: 429,
     description: 'Too many requests. Rate limit exceeded',
   })
+  // @UseInterceptors(
+  //   FileInterceptor('file', {
+  //     storage: memoryStorage(),
+  //     limits: {
+  //       fileSize: 10 * 1024 * 1024,
+  //     },
+
+  //     fileFilter: (req, file, cb) => {
+  //       const allowedMimeTypes = [
+  //         'application/pdf',
+  //         'application/msword', // .doc
+  //         'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  //       ];
+
+  //       const allowedExtensions = ['.pdf', '.doc', '.docx'];
+
+  //       const isValidMime = allowedMimeTypes.includes(file.mimetype);
+  //       const isValidExt = allowedExtensions.some((ext) =>
+  //         file.originalname.toLowerCase().endsWith(ext),
+  //       );
+
+  //       if (!isValidMime || !isValidExt) {
+  //         return cb(
+  //           new BadRequestException(
+  //             'Only PDF, DOC, and DOCX files are allowed',
+  //           ),
+  //           false,
+  //         );
+  //       }
+
+  //       cb(null, true);
+  //     },
+  //   }),
+  // )
   @UseInterceptors(
     FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads', // make sure this folder exists
+        filename: (req, file, cb) => {
+          const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueName + extname(file.originalname));
+        },
+      }),
       limits: {
-        fileSize: 10 * 1024 * 1024,
+        fileSize: 20 * 1024 * 1024, // increase if needed
       },
-
       fileFilter: (req, file, cb) => {
-        if (!file.mimetype.includes('pdf')) {
-          return cb(new Error('Only PDF files allowed'), false);
+        const allowedMimeTypes = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+
+        const allowedExtensions = ['.pdf', '.doc', '.docx'];
+
+        const isValidMime = allowedMimeTypes.includes(file.mimetype);
+        const isValidExt = allowedExtensions.some((ext) =>
+          file.originalname.toLowerCase().endsWith(ext),
+        );
+
+        if (!isValidMime || !isValidExt) {
+          return cb(
+            new BadRequestException(
+              'Only PDF, DOC, and DOCX files are allowed',
+            ),
+            false,
+          );
         }
 
         cb(null, true);
@@ -104,14 +165,55 @@ export class TaxLawsController {
   async uploadTaxLaw(
     @UploadedFile(
       new ParseFilePipe({
-        validators: [new FileTypeValidator({ fileType: 'pdf' })],
         fileIsRequired: true,
       }),
     )
     file: Express.Multer.File,
+    @Body('title') title: string,
   ) {
-    const upload = await this.taxLawsService.createFullTaxLawDocument(file);
+    console.log('FULL FILE OBJECT:', file);
+
+    if (!title) {
+      throw new BadRequestException({
+        message: 'Title is required.',
+        success: false,
+        status: 400,
+      });
+    }
+    const upload = await this.taxLawsService.createFullTaxLawDocument(
+      file,
+      title,
+    );
     return upload;
+  }
+
+  @Post('create-tax-law')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth('JWT-auth')
+  @SuccessMessage('Tax law created successfully.')
+  @ApiOperation({
+    summary: 'Create a Tax Law.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Tax law created successfully.',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request. Unable to create tax law',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests. Rate limit exceeded',
+  })
+  async createTaxLaw(@Body() payload: CreateTaxLawDto) {
+    return this.taxLawsService.createTaxLaw(payload);
   }
 
   @Get('get-tax-laws')

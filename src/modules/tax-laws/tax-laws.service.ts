@@ -1,5 +1,6 @@
 import { InjectQueue } from '@nestjs/bull';
 import {
+  BadRequestException,
   ForbiddenException,
   forwardRef,
   Inject,
@@ -18,6 +19,7 @@ import { CreatePartDto } from './dtos/create-part.dto';
 import { CreateScheduleDto } from './dtos/create-schedule.dto';
 import { CreateSectionDto } from './dtos/create-section.dto';
 import { CreateSubSectionDto } from './dtos/create-subsection.dto';
+import { CreateTaxLawDto } from './dtos/create-taxlaw.dto';
 import { UpdateChapterDto } from './dtos/update-chapter.dto';
 import { UpdatePartDto } from './dtos/update-part.dto';
 import { UpdateScheduleDto } from './dtos/update-schedule.dto';
@@ -85,6 +87,37 @@ export class TaxLawsService {
     });
   }
 
+  async createTaxLaw(payload: CreateTaxLawDto) {
+    const existing = await this.taxLawsRepository.findTaxLawByTitle(
+      payload.title.toLowerCase().trim(),
+    );
+
+    if (existing) {
+      throw new BadRequestException({
+        message: 'Tax law with this title already exists',
+        success: false,
+        status: 400,
+      });
+    }
+
+    const input = {
+      ...payload,
+      title: payload.title.trim().toLowerCase(),
+    };
+
+    const newTaxLaw = await this.taxLawsRepository.createTaxLaw(input);
+
+    if (!newTaxLaw) {
+      throw new BadRequestException({
+        message: 'Unable to create tax law.',
+        success: false,
+        status: 400,
+      });
+    }
+
+    return newTaxLaw;
+  }
+
   async resolveTaxLawIdFromEntity(level: TaxLawLevels, entityId: string) {
     const response = await this.taxLawsRepository.resolveTaxLawIdFromEntity(
       level,
@@ -109,12 +142,17 @@ export class TaxLawsService {
     return schedule;
   }
 
-  async createFullTaxLawDocument(file: Express.Multer.File) {
+  async createFullTaxLawDocument(file: Express.Multer.File, taxLawId: string) {
     // 1. Extract text
     const rawText = await this.documentProcessingService.process(file);
 
+    console.log('service rawText:', rawText);
+    console.log('service rawText:', rawText);
+
     // 2. Parse to JSON
     const structuredData = this.taxLawParserService.parse(rawText);
+
+    console.log('service structuredData:', structuredData);
 
     // 3. Simple Validation
     if (!structuredData || !structuredData.chapters) {

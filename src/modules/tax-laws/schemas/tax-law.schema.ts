@@ -14,10 +14,7 @@ export class TaxLaw {
   title!: string;
 
   @Prop()
-  createdAt?: Date;
-
-  @Prop()
-  updatedAt?: Date;
+  parsedTitle?: string;
 
   @Prop()
   year?: number;
@@ -25,14 +22,20 @@ export class TaxLaw {
   @Prop({ trim: true })
   description?: string;
 
+  @Prop({ default: 0 })
+  totalUploads!: number;
+
+  @Prop({ default: 0 })
+  completedUploads!: number;
+
   @Prop()
   country?: string;
 
   @Prop({ default: [] })
-  tags!: string[];
+  tags?: string[];
 
   @Prop({ default: 0 })
-  totalSections!: number;
+  totalSections?: number;
 
   @Prop({
     type: String,

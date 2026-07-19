@@ -14,6 +14,7 @@ import { CreatePartDto } from '../dtos/create-part.dto';
 import { CreateScheduleDto } from '../dtos/create-schedule.dto';
 import { CreateSectionDto } from '../dtos/create-section.dto';
 import { CreateSubSectionDto } from '../dtos/create-subsection.dto';
+import { CreateTaxLawDto } from '../dtos/create-taxlaw.dto';
 import { Chapter, ChapterDocument } from '../schemas/chapter.schema';
 import { Part, PartDocument } from '../schemas/part.schema';
 import { Schedule, ScheduleDocument } from '../schemas/schedule.schema';
@@ -199,6 +200,20 @@ export class TaxLawsRepository {
       // You might want to delete the taxLaw entry here if it failed mid-way
       throw error;
     }
+  }
+
+  async findTaxLawByTitle(title: string) {
+    const response = await this.taxLawModel.findOne({
+      title: title.trim(),
+    });
+
+    return response;
+  }
+
+  async createTaxLaw(payload: CreateTaxLawDto) {
+    const newLaw = await new this.taxLawModel(payload).save();
+
+    return newLaw;
   }
 
   async getTaxLawSubSectionBySubSectionId(subSectionId: string) {
