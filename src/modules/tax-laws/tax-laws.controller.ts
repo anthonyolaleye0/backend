@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  MaxFileSizeValidator,
   Param,
   ParseFilePipe,
   Post,
@@ -25,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { GetCurrentUser } from '../../common/decorators/get-current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { SuccessMessage } from '../../common/decorators/success-message.decorator';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
@@ -32,6 +34,7 @@ import { QueryWithPaginationDto } from '../../common/dto/query-with-pagination';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { NormalizeDtoPipe } from '../../common/pipes/normalize-dto.pipe';
+import type { JwtUser } from '../../common/types/jwt-user.type';
 import { Role } from '../users/schemas/user.schema';
 import { CreateChapterDto } from './dtos/create-chapter.dto';
 import { CreatePartDto } from './dtos/create-part.dto';
@@ -50,7 +53,7 @@ import { TaxLawsService } from './tax-laws.service';
 @ApiTags('Tax-Laws')
 export class TaxLawsController {
   constructor(private readonly taxLawsService: TaxLawsService) {}
-  @Post('upload')
+  @Post('upload-tax-file/:taxLawId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.admin)
   @ApiBearerAuth('JWT-auth')
@@ -89,40 +92,6 @@ export class TaxLawsController {
     status: 429,
     description: 'Too many requests. Rate limit exceeded',
   })
-  // @UseInterceptors(
-  //   FileInterceptor('file', {
-  //     storage: memoryStorage(),
-  //     limits: {
-  //       fileSize: 10 * 1024 * 1024,
-  //     },
-
-  //     fileFilter: (req, file, cb) => {
-  //       const allowedMimeTypes = [
-  //         'application/pdf',
-  //         'application/msword', // .doc
-  //         'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-  //       ];
-
-  //       const allowedExtensions = ['.pdf', '.doc', '.docx'];
-
-  //       const isValidMime = allowedMimeTypes.includes(file.mimetype);
-  //       const isValidExt = allowedExtensions.some((ext) =>
-  //         file.originalname.toLowerCase().endsWith(ext),
-  //       );
-
-  //       if (!isValidMime || !isValidExt) {
-  //         return cb(
-  //           new BadRequestException(
-  //             'Only PDF, DOC, and DOCX files are allowed',
-  //           ),
-  //           false,
-  //         );
-  //       }
-
-  //       cb(null, true);
-  //     },
-  //   }),
-  // )
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -133,7 +102,7 @@ export class TaxLawsController {
         },
       }),
       limits: {
-        fileSize: 20 * 1024 * 1024, // increase if needed
+        fileSize: 10 * 1024 * 1024, // increase if needed
       },
       fileFilter: (req, file, cb) => {
         const allowedMimeTypes = [
@@ -166,23 +135,21 @@ export class TaxLawsController {
     @UploadedFile(
       new ParseFilePipe({
         fileIsRequired: true,
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 10 * 1024 * 1024,
+          }),
+        ],
       }),
     )
     file: Express.Multer.File,
-    @Body('title') title: string,
+    @Param('taxLawId') taxLawId: string,
   ) {
     console.log('FULL FILE OBJECT:', file);
 
-    if (!title) {
-      throw new BadRequestException({
-        message: 'Title is required.',
-        success: false,
-        status: 400,
-      });
-    }
     const upload = await this.taxLawsService.createFullTaxLawDocument(
       file,
-      title,
+      taxLawId,
     );
     return upload;
   }
@@ -240,8 +207,11 @@ export class TaxLawsController {
     status: 500,
     description: 'Internal server error',
   })
-  async findTaxLaws(@Query() queryWithPaginationDto: QueryWithPaginationDto) {
-    return await this.taxLawsService.findTaxLaws(queryWithPaginationDto);
+  async findTaxLaws(
+    @Query() queryWithPaginationDto: QueryWithPaginationDto,
+    @GetCurrentUser() user: JwtUser,
+  ) {
+    return await this.taxLawsService.findTaxLaws(queryWithPaginationDto, user);
   }
 
   @Get('get-tax-law-toc/:taxLawId/toc')

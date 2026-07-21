@@ -1,5 +1,6 @@
 import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import type { Job } from 'bull';
+import { Types } from 'mongoose';
 import { TaxLawsRepository } from '../repositories/tax-laws.repository';
 
 // tax-law.processor.ts
@@ -11,12 +12,20 @@ export class TaxLawProcessor {
 
   @Process({ name: 'process-tax-law', concurrency: 1 })
   async handleProcessTaxLaw(job: Job<any>): Promise<any> {
-    const { parsed, targetId } = job.data;
-    let taxLawId;
+    const { parsed, taxLawId } = job.data;
+
+    if (!parsed || !taxLawId) {
+      console.error('Invalid job payload');
+      return;
+    }
 
     try {
-      const taxLaw = await this.repository.createDraft(targetId, parsed);
-      taxLawId = taxLaw._id;
+      const taxLaw = await this.repository.createDraft(taxLawId, parsed);
+
+      if (!taxLaw) {
+        console.error('Tax law update failed');
+        return;
+      }
 
       let totalSectionsCount = 0;
 
@@ -28,7 +37,7 @@ export class TaxLawProcessor {
         const lastChapter = await this.repository.getLastChapterOrder(taxLawId);
 
         const chapter = await this.repository.createChapter({
-          taxLaw: taxLawId,
+          taxLaw: taxLaw._id,
           order: lastChapter ? lastChapter.order + 1 : 1,
           ...ch,
         });
@@ -47,7 +56,7 @@ export class TaxLawProcessor {
           const sectionData = pt.sections.map((sec) => ({
             ...sec,
             part: part._id,
-            taxLaw: taxLawId,
+            taxLaw: taxLaw._id,
           }));
 
           const lastSection = await this.repository.getLastSectionOrder(
@@ -84,16 +93,16 @@ export class TaxLawProcessor {
       if (parsed.schedules && parsed.schedules.length > 0) {
         const scheduleData = parsed.schedules.map((sch) => ({
           ...sch,
-          taxLaw: taxLawId, // Link each schedule to the parent Tax Law
+          taxLaw: taxLaw._id, // Link each schedule to the parent Tax Law
         }));
 
         await this.repository.insertSchedules(scheduleData);
       }
 
-      await this.repository.publishLaw(taxLawId, totalSectionsCount);
+      await this.repository.publishLaw(taxLaw._id, totalSectionsCount);
       return { success: true, taxLawId };
     } catch (error) {
-      await this.repository.markAsFailed(taxLawId);
+      await this.repository.markAsFailed(new Types.ObjectId(taxLawId));
       throw error;
     }
   }

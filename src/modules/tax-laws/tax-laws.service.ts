@@ -8,8 +8,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Queue } from 'bull';
-import { Types } from 'mongoose';
 import { QueryWithPaginationDto } from '../../common/dto/query-with-pagination';
+import type { JwtUser } from '../../common/types/jwt-user.type';
 import { AmendmentsService } from '../amendments/amendments.service';
 import { TargetLevel } from '../amendments/dtos/create-amendment.dto';
 import { TaxLawLevels } from '../amendments/schemas/amendment.schema';
@@ -143,6 +143,16 @@ export class TaxLawsService {
   }
 
   async createFullTaxLawDocument(file: Express.Multer.File, taxLawId: string) {
+    const taxLawExist =
+      await this.taxLawsRepository.findLawByTaxLawId(taxLawId);
+
+    if (!taxLawExist) {
+      throw new NotFoundException({
+        message: 'Tax law not found.',
+        success: false,
+        status: 404,
+      });
+    }
     // 1. Extract text
     const rawText = await this.documentProcessingService.process(file);
 
@@ -162,17 +172,18 @@ export class TaxLawsService {
     }
 
     // 4. Queue the processing
-    return await this.queueTaxLawProcessing(structuredData);
+    return await this.queueTaxLawProcessing(structuredData, taxLawId);
   }
 
-  private async queueTaxLawProcessing(parsedData: any) {
-    const targetId = new Types.ObjectId();
+  private async queueTaxLawProcessing(parsedData: any, taxLawId: string) {
+    // const targetId = new Types.ObjectId();
 
     const job = await this.taxLawQueue.add(
       'process-tax-law',
       {
         parsed: parsedData,
-        targetId,
+        // targetId,
+        taxLawId,
       },
       {
         attempts: 3,
@@ -184,16 +195,24 @@ export class TaxLawsService {
 
     return {
       jobId: job.id,
-      taxLawId: targetId,
+      taxLawId,
+      // taxLawId: targetId,
       message:
         'Tax law is being processed. This may take a few minutes for large files.',
     };
   }
 
-  async findTaxLaws(queryWithPaginationDto: QueryWithPaginationDto) {
+  async findTaxLaws(
+    queryWithPaginationDto: QueryWithPaginationDto,
+    user: JwtUser,
+  ) {
+    const userRole = user.role;
+
     const taxLaws = await this.taxLawsRepository.findTaxLaws(
       queryWithPaginationDto,
+      userRole,
     );
+
     return taxLaws;
   }
 

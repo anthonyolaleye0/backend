@@ -9,6 +9,7 @@ import { Connection, Model, Types } from 'mongoose';
 import { QueryWithPaginationDto } from '../../../common/dto/query-with-pagination';
 import { TaxLawLevels } from '../../amendments/schemas/amendment.schema';
 import { DailyTipsRepository } from '../../daily-tips/repositories/daily-tips.repository';
+import { Role } from '../../users/schemas/user.schema';
 import { CreateChapterDto } from '../dtos/create-chapter.dto';
 import { CreatePartDto } from '../dtos/create-part.dto';
 import { CreateScheduleDto } from '../dtos/create-schedule.dto';
@@ -756,7 +757,10 @@ export class TaxLawsRepository {
     return chapter;
   }
 
-  async findTaxLaws(queryWithPaginationDto: QueryWithPaginationDto): Promise<{
+  async findTaxLaws(
+    queryWithPaginationDto: QueryWithPaginationDto,
+    userRole: Role,
+  ): Promise<{
     taxLaws: any[];
     totalPages: number;
     totalCount: number;
@@ -766,8 +770,12 @@ export class TaxLawsRepository {
     const skip = (page - 1) * limit;
 
     const matchStage: any = {
-      status: TaxLawStatus.PUBLISHED,
+      isActive: true,
     };
+
+    if (userRole !== 'admin') {
+      matchStage.status = TaxLawStatus.PUBLISHED;
+    }
 
     // 🔍 SEARCH
     if (searchParams) {
@@ -1102,9 +1110,11 @@ This allows the user to see the structure and click where they want to go.
     return response;
   }
 
-  async createDraft(targetId: string, parsed: any) {
-    return await this.taxLawModel.create({
-      _id: targetId,
+  async createDraft(taxLawId: string, parsed: any) {
+    const id = new Types.ObjectId(taxLawId);
+
+    return await this.taxLawModel.findByIdAndUpdate({
+      _id: id,
       ...parsed,
       status: 'PROCESSING',
       totalSections: 0,
@@ -1284,6 +1294,282 @@ This allows the user to see the structure and click where they want to go.
       limit,
     };
   }
+
+  // WORKING FOR TAX LAW THAT HAS DOCUMENTS UPLOAD TO IT
+  // async findLawById(
+  //   taxLawId: string,
+  //   queryWithPaginationDto: QueryWithPaginationDto,
+  // ) {
+  //   const { page = 1, limit = 10, searchParams } = queryWithPaginationDto;
+
+  //   const skip = (page - 1) * limit;
+  //   const id = new Types.ObjectId(taxLawId);
+
+  //   // ✅ Multi-word search regex
+  //   const searchRegex = searchParams
+  //     ? new RegExp(
+  //         searchParams
+  //           .trim()
+  //           .split(/\s+/)
+  //           .map((word) => `(?=.*${word})`)
+  //           .join(''),
+  //         'i',
+  //       )
+  //     : null;
+
+  //   const result = await this.taxLawModel.aggregate([
+  //     {
+  //       $match: {
+  //         _id: id,
+  //         status: TaxLawStatus.PUBLISHED,
+  //       },
+  //     },
+
+  //     {
+  //       $facet: {
+  //         // --- BRANCH 1: GLOBAL TOTALS (Unfiltered Hierarchy) ---
+  //         metadata: [
+  //           {
+  //             $lookup: {
+  //               from: 'chapters',
+  //               localField: '_id',
+  //               foreignField: 'taxLaw',
+  //               pipeline: [
+  //                 {
+  //                   $lookup: {
+  //                     from: 'parts',
+  //                     localField: '_id',
+  //                     foreignField: 'chapter',
+  //                     pipeline: [
+  //                       {
+  //                         $lookup: {
+  //                           from: 'sections',
+  //                           localField: '_id',
+  //                           foreignField: 'part',
+  //                           pipeline: [
+  //                             {
+  //                               $lookup: {
+  //                                 from: 'subsections',
+  //                                 localField: '_id',
+  //                                 foreignField: 'section',
+  //                                 as: 'ss',
+  //                               },
+  //                             },
+  //                           ],
+  //                           as: 's',
+  //                         },
+  //                       },
+  //                     ],
+  //                     as: 'p',
+  //                   },
+  //                 },
+  //               ],
+  //               as: 'chapters',
+  //             },
+  //           },
+  //           {
+  //             $lookup: {
+  //               from: 'schedules',
+  //               localField: '_id',
+  //               foreignField: 'taxLaw',
+  //               as: 'sch',
+  //             },
+  //           },
+  //           {
+  //             $project: {
+  //               totalChapters: { $size: '$chapters' },
+  //               totalSchedules: { $size: '$sch' },
+  //               totalParts: {
+  //                 $sum: {
+  //                   $map: {
+  //                     input: '$chapters',
+  //                     as: 'c',
+  //                     in: { $size: { $ifNull: ['$$c.p', []] } },
+  //                   },
+  //                 },
+  //               },
+  //               totalSections: {
+  //                 $sum: {
+  //                   $map: {
+  //                     input: '$chapters',
+  //                     as: 'c',
+  //                     in: {
+  //                       $sum: {
+  //                         $map: {
+  //                           input: { $ifNull: ['$$c.p', []] },
+  //                           as: 'p',
+  //                           in: { $size: { $ifNull: ['$$p.s', []] } },
+  //                         },
+  //                       },
+  //                     },
+  //                   },
+  //                 },
+  //               },
+  //               totalSubsections: {
+  //                 $sum: {
+  //                   $map: {
+  //                     input: '$chapters',
+  //                     as: 'c',
+  //                     in: {
+  //                       $sum: {
+  //                         $map: {
+  //                           input: { $ifNull: ['$$c.p', []] },
+  //                           as: 'p',
+  //                           in: {
+  //                             $sum: {
+  //                               $map: {
+  //                                 input: { $ifNull: ['$$p.s', []] },
+  //                                 as: 's',
+  //                                 in: { $size: { $ifNull: ['$$s.ss', []] } },
+  //                               },
+  //                             },
+  //                           },
+  //                         },
+  //                       },
+  //                     },
+  //                   },
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         ],
+
+  //         // --- BRANCH 2: FILTERED DATA & PER-CHAPTER TOTALS ---
+  //         data: [
+  //           {
+  //             $lookup: {
+  //               from: 'chapters',
+  //               let: { taxLawId: '$_id' },
+  //               pipeline: [
+  //                 { $match: { $expr: { $eq: ['$taxLaw', '$$taxLawId'] } } },
+  //                 {
+  //                   $lookup: {
+  //                     from: 'parts',
+  //                     let: { chId: '$_id' },
+  //                     pipeline: [
+  //                       { $match: { $expr: { $eq: ['$chapter', '$$chId'] } } },
+  //                       {
+  //                         $lookup: {
+  //                           from: 'sections',
+  //                           let: { pId: '$_id' },
+  //                           pipeline: [
+  //                             {
+  //                               $match: { $expr: { $eq: ['$part', '$$pId'] } },
+  //                             },
+  //                             {
+  //                               $lookup: {
+  //                                 from: 'subsections',
+  //                                 let: { sId: '$_id' },
+  //                                 pipeline: [
+  //                                   {
+  //                                     $match: {
+  //                                       $expr: {
+  //                                         $eq: [
+  //                                           { $toObjectId: '$section' },
+  //                                           '$$sId',
+  //                                         ],
+  //                                       },
+  //                                       ...(searchRegex
+  //                                         ? { content: { $regex: searchRegex } }
+  //                                         : {}),
+  //                                     },
+  //                                   },
+  //                                 ],
+  //                                 as: 'subsections',
+  //                               },
+  //                             },
+  //                             ...(searchRegex
+  //                               ? [
+  //                                   {
+  //                                     $match: {
+  //                                       'subsections.0': { $exists: true },
+  //                                     },
+  //                                   },
+  //                                 ]
+  //                               : []),
+  //                           ],
+  //                           as: 'sections',
+  //                         },
+  //                       },
+  //                       ...(searchRegex
+  //                         ? [{ $match: { 'sections.0': { $exists: true } } }]
+  //                         : []),
+  //                     ],
+  //                     as: 'parts',
+  //                   },
+  //                 },
+  //                 ...(searchRegex
+  //                   ? [{ $match: { 'parts.0': { $exists: true } } }]
+  //                   : []),
+  //                 // Per-Chapter Totals (including fix for totalSubsections)
+  //                 {
+  //                   $addFields: {
+  //                     totalParts: { $size: '$parts' },
+  //                     totalSections: {
+  //                       $sum: {
+  //                         $map: {
+  //                           input: '$parts',
+  //                           as: 'p',
+  //                           in: { $size: { $ifNull: ['$$p.sections', []] } },
+  //                         },
+  //                       },
+  //                     },
+  //                     totalSubsections: {
+  //                       $sum: {
+  //                         $map: {
+  //                           input: '$parts',
+  //                           as: 'p',
+  //                           in: {
+  //                             $sum: {
+  //                               $map: {
+  //                                 input: { $ifNull: ['$$p.sections', []] },
+  //                                 as: 's',
+  //                                 in: {
+  //                                   $size: { $ifNull: ['$$s.subsections', []] },
+  //                                 },
+  //                               },
+  //                             },
+  //                           },
+  //                         },
+  //                       },
+  //                     },
+  //                   },
+  //                 },
+  //               ],
+  //               as: 'chapters',
+  //             },
+  //           },
+  //         ],
+  //       },
+  //     },
+
+  //     // --- FINAL MERGE & OUTPUT ---
+  //     {
+  //       $project: {
+  //         _id: { $arrayElemAt: ['$data._id', 0] },
+  //         title: { $arrayElemAt: ['$data.title', 0] },
+  //         year: { $arrayElemAt: ['$data.year', 0] },
+  //         description: { $arrayElemAt: ['$data.description', 0] },
+  //         // Global Totals
+  //         totalChapters: { $arrayElemAt: ['$metadata.totalChapters', 0] },
+  //         totalParts: { $arrayElemAt: ['$metadata.totalParts', 0] },
+  //         totalSections: { $arrayElemAt: ['$metadata.totalSections', 0] },
+  //         totalSubsections: { $arrayElemAt: ['$metadata.totalSubsections', 0] },
+  //         totalSchedules: { $arrayElemAt: ['$metadata.totalSchedules', 0] },
+  //         // Paginated Chapters
+  //         chapters: {
+  //           $slice: [{ $arrayElemAt: ['$data.chapters', 0] }, skip, limit],
+  //         },
+  //       },
+  //     },
+  //   ]);
+
+  //   const taxLaw = result[0];
+
+  //   console.log('taxLaw:', taxLaw);
+  //   return taxLaw;
+  // }
+
   async findLawById(
     taxLawId: string,
     queryWithPaginationDto: QueryWithPaginationDto,
@@ -1315,7 +1601,9 @@ This allows the user to see the structure and click where they want to go.
 
       {
         $facet: {
-          // --- BRANCH 1: GLOBAL TOTALS (Unfiltered Hierarchy) ---
+          // ===============================
+          // ✅ METADATA (GLOBAL TOTALS)
+          // ===============================
           metadata: [
             {
               $lookup: {
@@ -1408,7 +1696,9 @@ This allows the user to see the structure and click where they want to go.
                                 $map: {
                                   input: { $ifNull: ['$$p.s', []] },
                                   as: 's',
-                                  in: { $size: { $ifNull: ['$$s.ss', []] } },
+                                  in: {
+                                    $size: { $ifNull: ['$$s.ss', []] },
+                                  },
                                 },
                               },
                             },
@@ -1422,8 +1712,20 @@ This allows the user to see the structure and click where they want to go.
             },
           ],
 
-          // --- BRANCH 2: FILTERED DATA & PER-CHAPTER TOTALS ---
+          // ===============================
+          // ✅ DATA (MAIN DATA + FIXED ROOT FIELDS)
+          // ===============================
           data: [
+            // ✅ FIX 1: Preserve root fields
+            {
+              $project: {
+                _id: 1,
+                title: 1,
+                year: 1,
+                description: 1,
+              },
+            },
+
             {
               $lookup: {
                 from: 'chapters',
@@ -1458,7 +1760,11 @@ This allows the user to see the structure and click where they want to go.
                                           ],
                                         },
                                         ...(searchRegex
-                                          ? { content: { $regex: searchRegex } }
+                                          ? {
+                                              content: {
+                                                $regex: searchRegex,
+                                              },
+                                            }
                                           : {}),
                                       },
                                     },
@@ -1480,7 +1786,13 @@ This allows the user to see the structure and click where they want to go.
                           },
                         },
                         ...(searchRegex
-                          ? [{ $match: { 'sections.0': { $exists: true } } }]
+                          ? [
+                              {
+                                $match: {
+                                  'sections.0': { $exists: true },
+                                },
+                              },
+                            ]
                           : []),
                       ],
                       as: 'parts',
@@ -1489,7 +1801,8 @@ This allows the user to see the structure and click where they want to go.
                   ...(searchRegex
                     ? [{ $match: { 'parts.0': { $exists: true } } }]
                     : []),
-                  // Per-Chapter Totals (including fix for totalSubsections)
+
+                  // ✅ Per-Chapter Totals
                   {
                     $addFields: {
                       totalParts: { $size: '$parts' },
@@ -1498,7 +1811,11 @@ This allows the user to see the structure and click where they want to go.
                           $map: {
                             input: '$parts',
                             as: 'p',
-                            in: { $size: { $ifNull: ['$$p.sections', []] } },
+                            in: {
+                              $size: {
+                                $ifNull: ['$$p.sections', []],
+                              },
+                            },
                           },
                         },
                       },
@@ -1510,10 +1827,14 @@ This allows the user to see the structure and click where they want to go.
                             in: {
                               $sum: {
                                 $map: {
-                                  input: { $ifNull: ['$$p.sections', []] },
+                                  input: {
+                                    $ifNull: ['$$p.sections', []],
+                                  },
                                   as: 's',
                                   in: {
-                                    $size: { $ifNull: ['$$s.subsections', []] },
+                                    $size: {
+                                      $ifNull: ['$$s.subsections', []],
+                                    },
                                   },
                                 },
                               },
@@ -1531,22 +1852,47 @@ This allows the user to see the structure and click where they want to go.
         },
       },
 
-      // --- FINAL MERGE & OUTPUT ---
+      // ===============================
+      // ✅ FINAL MERGE
+      // ===============================
       {
         $project: {
-          _id: { $arrayElemAt: ['$data._id', 0] },
+          // ✅ FIX 2: Ensure ID always exists
+          _id: {
+            $ifNull: [{ $arrayElemAt: ['$data._id', 0] }, id],
+          },
           title: { $arrayElemAt: ['$data.title', 0] },
           year: { $arrayElemAt: ['$data.year', 0] },
-          description: { $arrayElemAt: ['$data.description', 0] },
-          // Global Totals
-          totalChapters: { $arrayElemAt: ['$metadata.totalChapters', 0] },
-          totalParts: { $arrayElemAt: ['$metadata.totalParts', 0] },
-          totalSections: { $arrayElemAt: ['$metadata.totalSections', 0] },
-          totalSubsections: { $arrayElemAt: ['$metadata.totalSubsections', 0] },
-          totalSchedules: { $arrayElemAt: ['$metadata.totalSchedules', 0] },
-          // Paginated Chapters
+          description: {
+            $arrayElemAt: ['$data.description', 0],
+          },
+
+          // Global totals
+          totalChapters: {
+            $arrayElemAt: ['$metadata.totalChapters', 0],
+          },
+          totalParts: {
+            $arrayElemAt: ['$metadata.totalParts', 0],
+          },
+          totalSections: {
+            $arrayElemAt: ['$metadata.totalSections', 0],
+          },
+          totalSubsections: {
+            $arrayElemAt: ['$metadata.totalSubsections', 0],
+          },
+          totalSchedules: {
+            $arrayElemAt: ['$metadata.totalSchedules', 0],
+          },
+
+          // ✅ FIX 3: Chapters fallback to []
           chapters: {
-            $slice: [{ $arrayElemAt: ['$data.chapters', 0] }, skip, limit],
+            $slice: [
+              {
+                $ifNull: [{ $arrayElemAt: ['$data.chapters', 0] }, []],
+              },
+              skip,
+              limit,
+            ],
           },
         },
       },
@@ -1555,9 +1901,16 @@ This allows the user to see the structure and click where they want to go.
     const taxLaw = result[0];
 
     console.log('taxLaw:', taxLaw);
+
     return taxLaw;
   }
 
+  async findLawByTaxLawId(taxLawId: string) {
+    const id = new Types.ObjectId(taxLawId);
+    const response = await this.taxLawModel.findById(id);
+
+    return response;
+  }
   async getSectionBySectionId(
     sectionId: string,
   ): Promise<SectionDocument | null> {
