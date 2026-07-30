@@ -13,6 +13,11 @@ import { UsersRepository } from './repositories/users.repository';
 export class UsersService {
   constructor(private usersRepository: UsersRepository) {}
 
+  async getUserStats() {
+    const response = await this.usersRepository.getUserStats();
+
+    return response;
+  }
   async findUserById(userId: string): Promise<UserResponseDto> {
     const id = new Types.ObjectId(userId);
     const user = await this.usersRepository.findById(id);

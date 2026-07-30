@@ -23,6 +23,7 @@ import { TaxLawsModule } from './modules/tax-laws/tax-laws.module';
 import { TaxTipsModule } from './modules/tax-tips/tax-tips.module';
 import { TokensModule } from './modules/tokens/tokens.module';
 import { UsersModule } from './modules/users/users.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -113,6 +114,7 @@ import { UsersModule } from './modules/users/users.module';
     SearchModule,
     DocumentProcessingModule,
     DailyTipsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

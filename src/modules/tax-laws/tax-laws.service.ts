@@ -8,6 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Queue } from 'bull';
+import * as fs from 'fs';
 import { QueryWithPaginationDto } from '../../common/dto/query-with-pagination';
 import type { JwtUser } from '../../common/types/jwt-user.type';
 import { AmendmentsService } from '../amendments/amendments.service';
@@ -172,7 +173,11 @@ export class TaxLawsService {
     }
 
     // 4. Queue the processing
-    return await this.queueTaxLawProcessing(structuredData, taxLawId);
+    const response = await this.queueTaxLawProcessing(structuredData, taxLawId);
+
+    fs.unlinkSync(file.path);
+
+    return response;
   }
 
   private async queueTaxLawProcessing(parsedData: any, taxLawId: string) {
@@ -1378,6 +1383,32 @@ export class TaxLawsService {
     }
 
     console.log('service response:', response);
+
+    return response;
+  }
+
+  async getTaxLawStats() {
+    const response = await this.taxLawsRepository.getTaxLawStats();
+
+    return response;
+  }
+  async getStructureStats() {
+    const response = await this.taxLawsRepository.getStructureStats();
+
+    return response;
+  }
+  async getUploadStats() {
+    const response = await this.taxLawsRepository.getUploadStats();
+
+    return response;
+  }
+  async getRecentActivity() {
+    const response = await this.taxLawsRepository.getRecentActivity();
+
+    return response;
+  }
+  async getUploadTrends() {
+    const response = await this.taxLawsRepository.getUploadTrends();
 
     return response;
   }

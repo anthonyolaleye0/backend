@@ -111,7 +111,19 @@ export class UsersRepository {
   async findAllEmailsForDailyTips() {
     const emails = await this.userModel.find({}, { email: 1 });
 
-    console.log('findAllEmailsForDailyTips:', emails);
     return emails;
+  }
+
+  async getUserStats() {
+    const [totalUsers, totalAdmins] = await Promise.all([
+      this.userModel.countDocuments(),
+      this.userModel.countDocuments({ role: Role.admin }),
+    ]);
+
+    return {
+      totalUsers,
+      totalAdmins,
+      totalRegularUsers: totalUsers - totalAdmins,
+    };
   }
 }

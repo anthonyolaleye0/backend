@@ -2337,4 +2337,77 @@ This allows the user to see the structure and click where they want to go.
       }
     }
   }
+
+  async getTaxLawStats() {
+    const totalTaxLaws = await this.taxLawModel.countDocuments();
+    return { totalTaxLaws };
+  }
+
+  async getStructureStats() {
+    const [chapters, parts, sections, subsections, schedules] =
+      await Promise.all([
+        this.chapterModel.countDocuments(),
+        this.partModel.countDocuments(),
+        this.sectionModel.countDocuments(),
+        this.subSectionModel.countDocuments(),
+        this.scheduleModel.countDocuments(),
+      ]);
+
+    return {
+      totalChapters: chapters,
+      totalParts: parts,
+      totalSections: sections,
+      totalSubsections: subsections,
+      totalSchedules: schedules,
+    };
+  }
+
+  async getUploadStats() {
+    const result = await this.taxLawModel.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return result;
+  }
+
+  async getRecentActivity() {
+    return this.taxLawModel
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('title createdAt status');
+  }
+
+  async getUploadTrends() {
+    return this.taxLawModel.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // last 30 days
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+      {
+        $project: {
+          _id: 0,
+          date: '$_id',
+          count: 1,
+        },
+      },
+    ]);
+  }
 }
