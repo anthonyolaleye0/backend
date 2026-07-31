@@ -2376,15 +2376,118 @@ This allows the user to see the structure and click where they want to go.
   }
 
   async getRecentActivity() {
-    return this.taxLawModel
+    return await this.taxLawModel
       .find()
       .sort({ createdAt: -1 })
       .limit(5)
       .select('title createdAt status');
   }
 
+  // async getSectionsPerTaxLaw() {
+  //   return await this.taxLawModel.aggregate([
+  //     {
+  //       $lookup: {
+  //         from: 'sections',
+  //         localField: '_id',
+  //         foreignField: 'taxLawId',
+  //         as: 'sections',
+  //       },
+  //     },
+  //     {
+  //       $project: {
+  //         title: 1,
+  //         sectionCount: { $size: '$sections' },
+  //       },
+  //     },
+  //     { $sort: { sectionCount: -1 } },
+  //     { $limit: 10 }, // top 10
+  //   ]);
+  // }
+
+  async getCountsPerTaxLaw(
+    type: 'chapters' | 'parts' | 'sections' | 'subsections',
+  ) {
+    const pipeline: any[] = [];
+
+    // 1. TaxLaw → Chapters
+    pipeline.push({
+      $lookup: {
+        from: 'chapters',
+        localField: '_id',
+        foreignField: 'taxLaw',
+        as: 'chapters',
+      },
+    });
+
+    // 2. Chapters → Parts
+    if (['parts', 'sections', 'subsections'].includes(type)) {
+      pipeline.push({
+        $lookup: {
+          from: 'parts',
+          localField: 'chapters._id',
+          foreignField: 'chapter',
+          as: 'parts',
+        },
+      });
+    }
+
+    // 3. Parts → Sections
+    if (['sections', 'subsections'].includes(type)) {
+      pipeline.push({
+        $lookup: {
+          from: 'sections',
+          localField: 'parts._id',
+          foreignField: 'part',
+          as: 'sections',
+        },
+      });
+    }
+
+    // 4. Sections → Subsections
+    if (type === 'subsections') {
+      pipeline.push({
+        $lookup: {
+          from: 'subsections',
+          localField: 'sections._id',
+          foreignField: 'section',
+          as: 'subsections',
+        },
+      });
+    }
+
+    // 5. Add Count Field
+    const fieldMap = {
+      chapters: 'chapters',
+      parts: 'parts',
+      sections: 'sections',
+      subsections: 'subsections',
+    };
+
+    const countField = fieldMap[type];
+
+    pipeline.push({
+      $addFields: {
+        count: { $size: `$${countField}` },
+      },
+    });
+
+    // 6. Final Shape (IMPORTANT: matches frontend reusable chart)
+    pipeline.push({
+      $project: {
+        _id: 0,
+        title: 1,
+        count: 1,
+      },
+    });
+
+    // 7. Sort + Limit
+    pipeline.push({ $sort: { count: -1 } }, { $limit: 10 });
+
+    return this.taxLawModel.aggregate(pipeline);
+  }
+
   async getUploadTrends() {
-    return this.taxLawModel.aggregate([
+    return await this.taxLawModel.aggregate([
       {
         $match: {
           createdAt: {

@@ -1412,4 +1412,12 @@ export class TaxLawsService {
 
     return response;
   }
+
+  async getCountsPerTaxLaw(
+    type: 'chapters' | 'parts' | 'sections' | 'subsections',
+  ) {
+    const response = await this.taxLawsRepository.getCountsPerTaxLaw(type);
+
+    return response;
+  }
 }

@@ -16,6 +16,10 @@ export class DashboardService {
       uploadStats,
       recentActivity,
       uploadTrends,
+      sectionsPerTaxLaw,
+      chaptersPerTaxLaw,
+      partsPerTaxLaw,
+      subSectionsPerTaxLaw,
     ] = await Promise.all([
       this.taxLawService.getTaxLawStats(),
       this.taxLawService.getStructureStats(),
@@ -23,7 +27,16 @@ export class DashboardService {
       this.taxLawService.getUploadStats(),
       this.taxLawService.getRecentActivity(),
       this.taxLawService.getUploadTrends(),
+      this.taxLawService.getCountsPerTaxLaw('sections'),
+      this.taxLawService.getCountsPerTaxLaw('chapters'),
+      this.taxLawService.getCountsPerTaxLaw('parts'),
+      this.taxLawService.getCountsPerTaxLaw('subsections'),
     ]);
+
+    console.log('chaptersPerTaxLaw:', chaptersPerTaxLaw);
+    console.log('partsPerTaxLaw:', partsPerTaxLaw);
+    console.log('sectionsPerTaxLaw:', sectionsPerTaxLaw);
+    console.log('subSectionsPerTaxLaw:', subSectionsPerTaxLaw);
 
     return {
       taxLawStats,
@@ -32,6 +45,10 @@ export class DashboardService {
       uploadStats,
       recentActivity,
       uploadTrends,
+      sectionsPerTaxLaw,
+      chaptersPerTaxLaw,
+      partsPerTaxLaw,
+      subSectionsPerTaxLaw,
     };
   }
 }
