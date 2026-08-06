@@ -11,8 +11,9 @@ import { Connection, Types } from 'mongoose';
 import { QueryWithPaginationDto } from '../../common/dto/query-with-pagination';
 import { JwtUser } from '../../common/types/jwt-user.type';
 import { PaymentGatewayService } from '../payment-gateway/payment-gateway.service';
+import { UserSubscriptionStatus } from '../subscriptions/enums/user-subscription-status.enum';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { Role } from '../users/schemas/user.schema';
-import { UsersService } from '../users/users.service';
 import { PaymentProvider } from './enums/payment-provider.enum';
 import { PaymentStatus } from './enums/payment-status.enum';
 import { WebhookProcessionTransactionType } from './enums/payment-transaction.enum';
@@ -23,8 +24,7 @@ export class PaymentService {
   constructor(
     @Inject(forwardRef(() => PaymentGatewayService))
     private readonly gatewayService: PaymentGatewayService,
-
-    private readonly userService: UsersService,
+    private readonly subService: SubscriptionsService,
 
     @InjectConnection() private readonly connection: Connection,
     private readonly paymentRepository: PaymentRepository,
@@ -121,7 +121,37 @@ export class PaymentService {
     findPaymentDoc.verified = true;
     await findPaymentDoc.save();
 
-    return { success: true };
+    const plan = await this.subService.findPlanById(
+      findPaymentDoc.planId.toString(),
+    );
+
+    await this.subService.deactivateActiveUserSubscription(
+      findPaymentDoc.userId.toString(),
+    );
+
+    const startDate = new Date();
+    const endDate = new Date(
+      startDate.getTime() + (plan.durationInDays || 365) * 24 * 60 * 60 * 1000,
+    );
+
+    const payload = {
+      userId: findPaymentDoc.userId,
+      planId: plan._id,
+      tier: plan.tier,
+      status: UserSubscriptionStatus.ACTIVE,
+      startDate,
+      endDate,
+    };
+
+    // Create the active UserSubscription record
+    const userSubscription = await this.subService.createNewSub(payload);
+
+    return {
+      success: true,
+      message: 'Payment verified and subscription activated successfully',
+      subscription: userSubscription,
+      transaction: findPaymentDoc,
+    };
   }
 
   async getAllPayments(queryWithPaginationDto: QueryWithPaginationDto) {

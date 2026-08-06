@@ -37,9 +37,7 @@ export class UserSubscriptionRepository {
     return response;
   }
 
-  async deactivateExistingActiveSubscriptions(
-    userId: string | Types.ObjectId,
-  ): Promise<void> {
+  async deactivateExistingActiveSubscriptions(userId: string): Promise<void> {
     await this.userSubModel.updateMany(
       {
         userId: new Types.ObjectId(userId.toString()),
