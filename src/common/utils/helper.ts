@@ -1,4 +1,4 @@
-import { NotAcceptableException } from '@nestjs/common';
+import { BadRequestException, NotAcceptableException } from '@nestjs/common';
 import parsePhoneNumberFromString from 'libphonenumber-js';
 
 export const normalizePhoneNumber = (phoneNumber: string) => {
@@ -13,6 +13,24 @@ export const normalizePhoneNumber = (phoneNumber: string) => {
   }
 
   return parsed.number;
+};
+
+export const generatePaymentReference = (payload, refType: 'PAYMENT') => {
+  const { planId, userId } = payload;
+
+  console.log('payload:', payload);
+
+  if (!planId || !userId) {
+    throw new BadRequestException({
+      message: 'User ID and Plan ID are required.',
+      success: false,
+      status: 400,
+    });
+  }
+
+  const ref = `${refType}_${userId}_${planId}_${Date.now()}`;
+
+  return ref;
 };
 
 // export const generateRefCode = (): string => {

@@ -116,4 +116,9 @@ export class UsersService {
     console.log('allUsers:', allUsers);
     return allUsers;
   }
+  async findUsersForTips() {
+    const allUsers = await this.usersRepository.findUsersForTips();
+    console.log('allUsers:', allUsers);
+    return allUsers;
+  }
 }

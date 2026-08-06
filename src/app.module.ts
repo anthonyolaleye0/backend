@@ -13,17 +13,22 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CalculatorsModule } from './modules/calculators/calculators.module';
 import { CaseLawModule } from './modules/case-law/case-law.module';
 import { DailyTipsModule } from './modules/daily-tips/daily-tips.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DeadlinesModule } from './modules/deadlines/deadlines.module';
 import { DocumentProcessingModule } from './modules/document-processing/document-processing.module';
+import { FeaturesModule } from './modules/features/features.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PaymentGatewayModule } from './modules/payment-gateway/payment-gateway.module';
+import { PaymentModule } from './modules/payment/payment.module';
 import { RefreshTokensModule } from './modules/refresh-tokens/refresh-tokens.module';
 import { SearchModule } from './modules/search/search.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { TaxLawsModule } from './modules/tax-laws/tax-laws.module';
 import { TaxTipsModule } from './modules/tax-tips/tax-tips.module';
 import { TokensModule } from './modules/tokens/tokens.module';
+import { UserDailyTipsModule } from './modules/user-daily-tips/user-daily-tips.module';
 import { UsersModule } from './modules/users/users.module';
-import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -115,6 +120,11 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     DocumentProcessingModule,
     DailyTipsModule,
     DashboardModule,
+    UserDailyTipsModule,
+    SubscriptionsModule,
+    FeaturesModule,
+    PaymentModule,
+    PaymentGatewayModule,
   ],
   controllers: [AppController],
   providers: [AppService],

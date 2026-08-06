@@ -108,6 +108,14 @@ export class UsersRepository {
     return response;
   }
 
+  async findUsersForTips() {
+    const users = await this.userModel
+      .find()
+      .select('firstName lastName email _id');
+
+    return users;
+  }
+
   async findAllEmailsForDailyTips() {
     const emails = await this.userModel.find({}, { email: 1 });
 

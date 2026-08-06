@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MailService } from '../../mail/mail.service';
 import { TaxLawsRepository } from '../tax-laws/repositories/tax-laws.repository';
+import { UserDailyTipsService } from '../user-daily-tips/user-daily-tips.service';
 import { UsersRepository } from '../users/repositories/users.repository';
 import { DailyTipsRepository } from './repositories/daily-tips.repository';
 
@@ -12,6 +13,7 @@ export class DailyTipsService {
     private readonly dailyTipsRepository: DailyTipsRepository,
     private readonly usersRepository: UsersRepository,
     private readonly taxLawsRepository: TaxLawsRepository,
+    private readonly userDailyTipsService: UserDailyTipsService,
     private mailService: MailService,
   ) {}
 
@@ -68,6 +70,9 @@ export class DailyTipsService {
     // =========================
     const users = await this.usersRepository.findAllEmailsForDailyTips();
 
+    const title = section?.title;
+    const content = subSection.content;
+
     for (const user of users) {
       await this.mailService.sendDailyTipsMail({
         to: user.email,
@@ -81,10 +86,27 @@ export class DailyTipsService {
       });
     }
 
-    await this.dailyTipsRepository.logTip(
+    const response = await this.dailyTipsRepository.logTip(
       section?._id.toString(),
       subSection._id.toString(),
     );
+
+    const formattedUser = users.map((user) => {
+      const obj = {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        _id: user._id,
+      };
+
+      return obj;
+    });
+
+    const createUsersTip =
+      await this.userDailyTipsService.createDailyTipForUsers(
+        response._id,
+        formattedUser,
+      );
 
     this.logger.log(`Sent: ${section?.number} - ${subSection.number}`);
   }
