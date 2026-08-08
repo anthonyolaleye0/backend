@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
-export type UserDailyTipDocument = HydratedDocument<UserDailyTip>;
+export type UserTipDocument = HydratedDocument<UserTip>;
 
 @Schema({ timestamps: true })
-export class UserDailyTip {
+export class UserTip {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId!: Types.ObjectId;
 
@@ -21,4 +21,5 @@ export class UserDailyTip {
   isDeleted!: boolean; // optional (like Gmail trash)
 }
 
-export const UserDailyTipSchema = SchemaFactory.createForClass(UserDailyTip);
+export const UserTipSchema = SchemaFactory.createForClass(UserTip);
+UserTipSchema.index({ userId: 1, isDeleted: 1, createdAt: -1 });

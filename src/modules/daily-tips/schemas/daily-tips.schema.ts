@@ -12,6 +12,12 @@ export class DailyTip {
   subSectionId!: Types.ObjectId;
 
   @Prop({ required: true })
+  title!: string;
+
+  @Prop({ required: true })
+  content!: string;
+
+  @Prop({ required: true })
   sentAt!: Date;
 
   @Prop({ default: 0 })

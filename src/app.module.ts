@@ -29,6 +29,7 @@ import { TaxTipsModule } from './modules/tax-tips/tax-tips.module';
 import { TokensModule } from './modules/tokens/tokens.module';
 import { UserDailyTipsModule } from './modules/user-daily-tips/user-daily-tips.module';
 import { UsersModule } from './modules/users/users.module';
+import { DecidedCasesModule } from './modules/decided-cases/decided-cases.module';
 
 @Module({
   imports: [
@@ -125,6 +126,7 @@ import { UsersModule } from './modules/users/users.module';
     FeaturesModule,
     PaymentModule,
     PaymentGatewayModule,
+    DecidedCasesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
