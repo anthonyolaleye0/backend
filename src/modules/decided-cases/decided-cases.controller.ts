@@ -38,7 +38,7 @@ import { QueryDecidedCasesDto } from './dtos/query-decided-case.dto';
 export class DecidedCasesController {
   constructor(private readonly decidedCasesService: DecidedCasesService) {}
 
-  @Get('get-all-cases')
+  @Get('get-all-decided-cases')
   @RequireFeature(FeatureKey.DECIDED_CASES)
   @ApiBearerAuth('JWT-auth')
   @SuccessMessage('Decided cases fetched successfully.')
@@ -62,6 +62,8 @@ export class DecidedCasesController {
   })
   async getCases(@Query() queryDto: QueryDecidedCasesDto) {
     const response = await this.decidedCasesService.getAllCases(queryDto);
+
+    console.log('getCases:', response);
 
     return response;
   }
