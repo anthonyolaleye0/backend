@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,11 +9,12 @@ import {
   Param,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -20,6 +22,9 @@ import {
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { SuccessMessage } from '../../common/decorators/success-message.decorator';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
@@ -68,7 +73,7 @@ export class DecidedCasesController {
     return response;
   }
 
-  @Get('get-case-by-id/:id')
+  @Get('get-decided-case-by-id/:id')
   @RequireFeature(FeatureKey.DECIDED_CASES)
   @ApiBearerAuth('JWT-auth')
   @SuccessMessage('Decided case fetched successfully.')
@@ -94,6 +99,29 @@ export class DecidedCasesController {
     const response = await this.decidedCasesService.getCaseById(id);
 
     return response;
+  }
+
+  @Get('get-decided-case-stream-by-id/:id')
+  @RequireFeature(FeatureKey.DECIDED_CASES)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Stream decided case PDF',
+    description:
+      'Streams the Cloudinary PDF binary directly to avoid browser CORS restrictions.',
+  })
+  async streamCasePdf(@Param('id') id: string, @Res() res: Response) {
+    const { buffer, contentType, fileName } =
+      await this.decidedCasesService.getCasePdfStream(id);
+
+    res.setHeader('Content-Type', contentType || 'application/pdf');
+    res.setHeader('Content-Length', buffer.length.toString());
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+    res.setHeader(
+      'Cache-Control',
+      'private, no-cache, no-store, must-revalidate',
+    );
+
+    return res.end(buffer);
   }
 
   @Post('upload-decided-case')
@@ -139,14 +167,34 @@ export class DecidedCasesController {
     description: 'Internal server error',
   })
   @UseInterceptors(
-    FilesInterceptor('file', 1, {
-      limits: {
-        fileSize: 10 * 1024 * 1024,
-      },
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/temp',
+        filename: (req, file, callback) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        },
+      }),
 
+      limits: {
+        fileSize: 15 * 1024 * 1024,
+      },
       fileFilter: (req, file, cb) => {
-        if (!file.mimetype.includes('image/')) {
-          return cb(new Error('Only image file is allowed'), false);
+        const allowedMimeTypes = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException(
+              'Invalid file type. Only PDF and Word documents (.pdf, .doc, .docx) are allowed.',
+            ),
+            false,
+          );
         }
 
         cb(null, true);

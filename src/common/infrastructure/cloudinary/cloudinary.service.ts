@@ -5,6 +5,7 @@ import {
   UploadApiOptions,
   UploadApiResponse,
 } from 'cloudinary';
+import fs from 'fs';
 import { MediaType } from '../enums/file-type.enum';
 import { CloudinaryResponse } from './cloudinary.types';
 
@@ -54,7 +55,15 @@ export class CloudinaryService implements OnModuleInit {
         },
       );
 
-      stream.end(file.buffer);
+      if (file.path) {
+        const fileStream = fs.createReadStream(file.path);
+        fileStream.on('error', (err) => reject(err));
+        fileStream.pipe(stream);
+      } else if (file.buffer) {
+        stream.end(file.buffer);
+      } else {
+        reject(new Error('Uploaded file has neither buffer nor disk path.'));
+      }
     });
   }
 
