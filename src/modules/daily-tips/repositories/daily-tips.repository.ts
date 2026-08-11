@@ -140,12 +140,21 @@ export class DailyTipsRepository {
   }
 
   // save sent tip
-  async logTip(sectionId: string, subSectionId: string) {
-    return new this.dailyTipsModel({
+  async logTip(
+    sectionId: string,
+    subSectionId: string,
+    title: string | undefined,
+    content: string,
+  ) {
+    const response = await new this.dailyTipsModel({
       sectionId: new Types.ObjectId(sectionId),
       subSectionId: new Types.ObjectId(subSectionId),
+      title: title ? title : 'daily tip',
+      content,
       sentAt: new Date(),
     }).save();
+
+    return response;
   }
 
   async isSectionExhausted(sectionId: string, totalSubSections: number) {

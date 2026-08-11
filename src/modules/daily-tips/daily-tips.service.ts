@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MailService } from '../../mail/mail.service';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { TaxLawsRepository } from '../tax-laws/repositories/tax-laws.repository';
 import { UserDailyTipsService } from '../user-daily-tips/user-daily-tips.service';
 import { UsersRepository } from '../users/repositories/users.repository';
@@ -14,6 +15,7 @@ export class DailyTipsService {
     private readonly usersRepository: UsersRepository,
     private readonly taxLawsRepository: TaxLawsRepository,
     private readonly userDailyTipsService: UserDailyTipsService,
+    private readonly subscriptionService: SubscriptionsService,
     private mailService: MailService,
   ) {}
 
@@ -66,9 +68,17 @@ export class DailyTipsService {
     }
 
     // =========================
-    // SEND TO USERS
+    // SEND TO USERS WHO ARE ON THE PLANS THAT HAS DAILY TIPS
     // =========================
-    const users = await this.usersRepository.findAllEmailsForDailyTips();
+    // const users = await this.usersRepository.findAllEmailsForDailyTips();
+    const users =
+      await this.subscriptionService.findSubscribedEmailsForDailyTips();
+
+    console.log('users:', users);
+    if (!users || !users.length) {
+      console.log('I can not find users and i am returning');
+      return;
+    }
 
     const title = section?.title;
     const content = subSection.content;
@@ -89,6 +99,8 @@ export class DailyTipsService {
     const response = await this.dailyTipsRepository.logTip(
       section?._id.toString(),
       subSection._id.toString(),
+      title,
+      content,
     );
 
     const formattedUser = users.map((user) => {

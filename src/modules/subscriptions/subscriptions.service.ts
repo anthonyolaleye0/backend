@@ -96,4 +96,19 @@ export class SubscriptionsService {
 
     return response;
   }
+
+  async findSubscribedEmailsForDailyTips() {
+    const response =
+      await this.userSubRepository.findSubscribedEmailsForDailyTips();
+
+    if (!response) {
+      throw new NotFoundException({
+        message: 'Nobody has subscribed to daily tips yet.',
+        success: false,
+        status: 404,
+      });
+    }
+
+    return response;
+  }
 }

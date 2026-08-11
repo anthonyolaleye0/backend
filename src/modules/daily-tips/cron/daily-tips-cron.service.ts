@@ -12,6 +12,7 @@ export class DailyTipsCronService implements OnModuleInit {
     this.logger.log('Registering node-cron job...');
 
     cron.schedule(
+      // '* * * * *', // 12 noon daily
       '0 12 * * *', // 12 noon daily
       async () => {
         this.logger.log('Running daily tax tip job...');

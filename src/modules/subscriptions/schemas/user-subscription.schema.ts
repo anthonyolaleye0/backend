@@ -20,7 +20,7 @@ export class UserSubscription {
     enum: [UserSubscriptionStatus],
     default: UserSubscriptionStatus.ACTIVE,
   })
-  status!: string;
+  status!: UserSubscriptionStatus;
 
   @Prop({ required: true })
   startDate!: Date;

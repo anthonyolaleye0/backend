@@ -1,6 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MailModule } from '../../mail/mail.module';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { TaxLawsModule } from '../tax-laws/tax-laws.module';
 import { UserDailyTipsModule } from '../user-daily-tips/user-daily-tips.module';
 import { UsersModule } from '../users/users.module';
@@ -18,6 +19,7 @@ import { DailyTip, DailyTipSchema } from './schemas/daily-tips.schema';
     UsersModule,
     MailModule,
     UserDailyTipsModule,
+    SubscriptionsModule,
 
     forwardRef(() => TaxLawsModule),
   ],

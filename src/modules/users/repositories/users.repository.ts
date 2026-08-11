@@ -117,7 +117,10 @@ export class UsersRepository {
   }
 
   async findAllEmailsForDailyTips() {
-    const emails = await this.userModel.find({}, { email: 1 });
+    const emails = await this.userModel.find(
+      {},
+      { email: 1, firstName: 1, lastName: 1 },
+    );
 
     return emails;
   }
