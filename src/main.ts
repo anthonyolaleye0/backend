@@ -10,7 +10,6 @@ import { AppModule } from './app.module';
 import { MongoExceptionFilter } from './common/filters/mongo-exception.filter';
 import { GlobalResponseInterceptor } from './common/interceptor/global-response.interceptor';
 import { SanitizePipe } from './common/pipes/sanitize.pipe';
-import { TaxLawsRepository } from './modules/tax-laws/repositories/tax-laws.repository';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,7 +26,7 @@ async function bootstrap() {
 
   const taxLawId = '69df523e8f9f618012c0dd87';
 
-  const repo = app.get(TaxLawsRepository);
+  // const repo = app.get(TaxLawsRepository);
   // await repo.countChapters(taxLawId);
   // await repo.countParts();
   // await repo.countSchedules();

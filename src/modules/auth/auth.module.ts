@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MailModule } from '../../mail/mail.module';
 import { RefreshTokensModule } from '../refresh-tokens/refresh-tokens.module';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { TokensModule } from '../tokens/tokens.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
@@ -33,6 +34,7 @@ import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
     UsersModule,
     MailModule,
     RefreshTokensModule,
+    SubscriptionsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy],

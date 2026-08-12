@@ -14,10 +14,10 @@ import { JwtUser } from '../../common/types/jwt-user.type';
 import { generateCode } from '../../common/utils/code';
 import { MailService } from '../../mail/mail.service';
 import { RefreshTokensService } from '../refresh-tokens/refresh-tokens.service';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { TokensRepository } from '../tokens/repositories/tokens.repository';
 import { TokenPurpose } from '../tokens/schemas/token.schema';
 import { UsersRepository } from '../users/repositories/users.repository';
-import { AuthResponseDto } from './dto/auth-response.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -33,6 +33,7 @@ export class AuthService {
     private blacklistedToken: Model<BlacklistedToken>,
     private usersRepository: UsersRepository,
     private jwtService: JwtService,
+    private userSubService: SubscriptionsService,
     private tokensRepository: TokensRepository,
     private mailService: MailService,
     private refreshTokensService: RefreshTokensService,
@@ -126,7 +127,7 @@ export class AuthService {
     };
   }
 
-  async loginUser(loginDto: LoginDto): Promise<AuthResponseDto> {
+  async loginUser(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
     console.log('email:', email);
@@ -187,6 +188,11 @@ export class AuthService {
         success: false,
       });
     } else {
+      const activeSubscription =
+        await this.userSubService.getUserActiveSubscription(
+          user._id.toString(),
+        );
+
       const refreshToken = await this.refreshTokensService.generateRefreshToken(
         user.email,
         user.role,
@@ -200,10 +206,17 @@ export class AuthService {
 
       const { password, ...others } = user;
 
+      const response = {
+        ...others,
+        subscription: activeSubscription,
+      };
+
+      console.log('response:', response);
+
       return {
         refreshToken: refreshToken.refreshToken,
         accessToken,
-        user: others,
+        user: response,
       };
     }
   }

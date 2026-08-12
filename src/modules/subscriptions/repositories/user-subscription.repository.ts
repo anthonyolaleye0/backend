@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { FeatureKey } from '../enums/feature.enum';
 import { UserSubscriptionStatus } from '../enums/user-subscription-status.enum';
+import { SubscriptionPlan } from '../schemas/subscription-plan.schema';
 import {
   UserSubscription,
   UserSubscriptionDocument,
@@ -15,9 +16,7 @@ export class UserSubscriptionRepository {
     private userSubModel: Model<UserSubscriptionDocument>,
   ) {}
 
-  async findActiveByUserId(
-    userId: string,
-  ): Promise<UserSubscriptionDocument | null> {
+  async findActiveByUserId(userId: string) {
     const response = await this.userSubModel
       .findOne({
         userId: new Types.ObjectId(userId),
@@ -27,13 +26,22 @@ export class UserSubscriptionRepository {
       .populate('planId')
       .exec();
 
-    return response;
+    const plan = response?.planId as unknown as SubscriptionPlan | undefined;
+    const allowedFeatures = plan?.allowedFeatures || [];
+
+    return {
+      hasActiveSubscription: Boolean(response),
+      tier: response?.tier,
+      endDate: response?.endDate,
+      allowedFeatures,
+      subscription: response,
+    };
   }
 
   async createSubscription(
     data: Partial<UserSubscription>,
   ): Promise<UserSubscriptionDocument> {
-    const response = await this.userSubModel.create(data);
+    const response = await new this.userSubModel(data).save();
 
     return response;
   }

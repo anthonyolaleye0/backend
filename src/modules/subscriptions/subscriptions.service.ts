@@ -27,19 +27,32 @@ export class SubscriptionsService {
 
   async getUserCurrentSubscription(userId: string) {
     const activeSub = await this.userSubRepository.findActiveByUserId(userId);
+
+    console.log('activeSub:', activeSub);
     if (!activeSub) {
       return { hasActiveSubscription: false, subscription: null };
     }
     return { hasActiveSubscription: true, subscription: activeSub };
   }
+  async getUserActiveSubscription(userId: string) {
+    const activeSub = await this.userSubRepository.findActiveByUserId(userId);
+
+    console.log('activeSub:', activeSub);
+
+    return activeSub;
+  }
 
   async userHasFeature(userId: string, feature: FeatureKey): Promise<boolean> {
     const activeSub = await this.userSubRepository.findActiveByUserId(userId);
-    if (!activeSub || !activeSub.planId) {
+    if (
+      !activeSub ||
+      !activeSub.subscription ||
+      !activeSub.subscription.planId
+    ) {
       return false;
     }
 
-    const plan = activeSub.planId as unknown as SubscriptionPlan;
+    const plan = activeSub.subscription.planId as unknown as SubscriptionPlan;
     return plan.allowedFeatures?.includes(feature) ?? false;
   }
 

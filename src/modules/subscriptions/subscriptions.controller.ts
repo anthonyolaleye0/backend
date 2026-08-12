@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { GetCurrentUser } from '../../common/decorators/get-current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -22,6 +23,7 @@ export class SubscriptionsController {
 
   // Authenticated User: Get current subscription status
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('get-my-status')
   async getMySubscription(@GetCurrentUser() user: JwtUser) {
     const response = await this.subscriptionsService.getUserCurrentSubscription(
