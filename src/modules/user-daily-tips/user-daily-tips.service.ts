@@ -1,9 +1,11 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
+import { JwtUser } from '../../common/types/jwt-user.type';
 import { QueryUserTipsDto } from './dtos/query-user-tips.dto';
 import { UserDailyTipsRepository } from './repositories/user-daily-tips.repository';
 
@@ -44,7 +46,15 @@ export class UserDailyTipsService {
     return response;
   }
 
-  async getUserInbox(userId: string, query: QueryUserTipsDto) {
+  async getUserInbox(user: JwtUser, userId: string, query: QueryUserTipsDto) {
+    if (user.sub.toString() !== userId) {
+      throw new ConflictException({
+        message: 'You can only view your messages.',
+        success: false,
+        status: 409,
+      });
+    }
+
     const response = await this.userTipRepo.getUserInbox(userId, query);
 
     return response;

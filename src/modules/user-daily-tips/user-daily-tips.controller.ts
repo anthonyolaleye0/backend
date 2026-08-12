@@ -27,7 +27,7 @@ import { UserDailyTipsService } from './user-daily-tips.service';
 export class UserDailyTipsController {
   constructor(private readonly userTipService: UserDailyTipsService) {}
 
-  @Get('get-inbox-messages')
+  @Get('get-inbox-messages/:userId')
   @UseGuards(JwtAuthGuard, FeatureAccessGuard, RolesGuard)
   @RequireFeature(FeatureKey.DAILY_TIPS)
   @Roles(Role.user, Role.admin)
@@ -58,10 +58,12 @@ export class UserDailyTipsController {
   })
   async getInbox(
     @GetCurrentUser() user: JwtUser,
+    @Param('userId') userId: string,
     @Query() query: QueryUserTipsDto,
   ) {
     const response = await this.userTipService.getUserInbox(
-      user.sub.toString(),
+      user,
+      userId,
       query,
     );
 

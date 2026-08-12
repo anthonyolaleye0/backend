@@ -103,9 +103,16 @@ export class UserDailyTipsRepository {
       isDeleted: false,
     };
 
-    if (queryDto.unreadOnly) {
-      matchStage.isRead = false;
-    }
+    // if (
+    //   queryDto.unreadOnly === true ||
+    //   (queryDto.unreadOnly as any) === 'true'
+    // ) {
+    //   matchStage.isRead = false;
+    // }
+
+    console.log('userId:', userId);
+
+    console.log('matchStage:', matchStage);
 
     const pipeline: any[] = [
       { $match: matchStage },
@@ -122,8 +129,10 @@ export class UserDailyTipsRepository {
       { $unwind: '$tipId' },
     ];
 
-    if (queryDto.searchParams) {
-      const searchRegex = new RegExp(queryDto.searchParams, 'i');
+    console.log('pipeline:', pipeline);
+
+    if (queryDto.searchParams && queryDto.searchParams.trim() !== '') {
+      const searchRegex = new RegExp(queryDto.searchParams.trim(), 'i');
       pipeline.push({
         $match: {
           $or: [
@@ -148,6 +157,8 @@ export class UserDailyTipsRepository {
       },
     ]);
 
+    console.log('aggregationResult:', aggregationResult);
+
     const totalCount = aggregationResult[0]?.metadata[0]?.totalCount || 0;
     const mails = aggregationResult[0]?.data || [];
     const totalPages = Math.ceil(totalCount / limit);
@@ -160,6 +171,7 @@ export class UserDailyTipsRepository {
       });
     }
 
+    console.log('mails:', mails);
     return {
       mails,
       totalCount,
