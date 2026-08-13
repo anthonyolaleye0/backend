@@ -5,6 +5,7 @@ import { QueryWithPaginationDto } from '../../../common/dto/query-with-paginatio
 import { generatePaymentReference } from '../../../common/utils/helper';
 import { CreatePaymentIntentDto } from '../dtos/payment-intent.dto';
 import { PaymentProvider } from '../enums/payment-provider.enum';
+import { PaymentStatus } from '../enums/payment-status.enum';
 import { Payment, PaymentDocument } from '../schemas/payment.schema';
 
 @Injectable()
@@ -24,6 +25,43 @@ export class PaymentRepository {
     return response;
   }
 
+  async getPaymentDocNotExpiredByUserIdPlanId(
+    userId: Types.ObjectId,
+    planId: Types.ObjectId,
+  ): Promise<PaymentDocument | null> {
+    const response = await this.paymentModel
+      .findOne({
+        userId,
+        planId,
+        status: PaymentStatus.pending,
+        isDeleted: false,
+        expiresAt: { $gt: new Date() },
+      })
+      .sort({ createdAt: -1 });
+
+    return response;
+  }
+
+  async deleteIncompletePendingPayments(
+    userId: Types.ObjectId,
+    planId: Types.ObjectId,
+  ) {
+    return this.paymentModel.deleteMany({
+      userId,
+      planId,
+      status: PaymentStatus.pending,
+      isDeleted: false,
+      $or: [
+        { providerReference: { $exists: false } },
+        { providerReference: null },
+        { providerReference: '' },
+        { authorizationUrl: { $exists: false } },
+        { authorizationUrl: null },
+        { authorizationUrl: '' },
+      ],
+    });
+  }
+
   async createPaymentIntent(
     provider: PaymentProvider,
     dto: CreatePaymentIntentDto,
@@ -38,7 +76,7 @@ export class PaymentRepository {
     const data = {
       amount: dto.amount,
       email: dto.email,
-      plan: dto.planId,
+      planId: dto.planId,
       reference,
       provider,
       expiresAt,

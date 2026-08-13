@@ -39,12 +39,11 @@ import { CreateDecidedCaseDto } from './dtos/create-decided-case.dto';
 import { QueryDecidedCasesDto } from './dtos/query-decided-case.dto';
 
 @Controller('decided-cases')
-@UseGuards(JwtAuthGuard, FeatureAccessGuard)
 export class DecidedCasesController {
   constructor(private readonly decidedCasesService: DecidedCasesService) {}
 
   @Get('get-all-decided-cases')
-  @RequireFeature(FeatureKey.DECIDED_CASES)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @SuccessMessage('Decided cases fetched successfully.')
   @HttpCode(HttpStatus.OK)
@@ -68,12 +67,11 @@ export class DecidedCasesController {
   async getCases(@Query() queryDto: QueryDecidedCasesDto) {
     const response = await this.decidedCasesService.getAllCases(queryDto);
 
-    console.log('getCases:', response);
-
     return response;
   }
 
   @Get('get-decided-case-by-id/:id')
+  @UseGuards(JwtAuthGuard, FeatureAccessGuard)
   @RequireFeature(FeatureKey.DECIDED_CASES)
   @ApiBearerAuth('JWT-auth')
   @SuccessMessage('Decided case fetched successfully.')
@@ -102,6 +100,7 @@ export class DecidedCasesController {
   }
 
   @Get('get-decided-case-stream-by-id/:id')
+  @UseGuards(JwtAuthGuard, FeatureAccessGuard)
   @RequireFeature(FeatureKey.DECIDED_CASES)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({

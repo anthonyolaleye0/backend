@@ -24,6 +24,8 @@ export class PaymentService {
   constructor(
     @Inject(forwardRef(() => PaymentGatewayService))
     private readonly gatewayService: PaymentGatewayService,
+
+    @Inject(forwardRef(() => SubscriptionsService))
     private readonly subService: SubscriptionsService,
 
     @InjectConnection() private readonly connection: Connection,
@@ -33,12 +35,38 @@ export class PaymentService {
     provider: PaymentProvider,
     data: {
       planId: Types.ObjectId;
-      paymentId: Types.ObjectId;
+      // paymentId: Types.ObjectId;
       email: string;
       amount: number;
       userId: Types.ObjectId;
     },
   ) {
+    const intentExist =
+      await this.paymentRepository.getPaymentDocNotExpiredByUserIdPlanId(
+        data.userId,
+        data.planId,
+      );
+
+    if (
+      intentExist &&
+      intentExist.providerReference &&
+      intentExist.authorizationUrl
+    ) {
+      const input = {
+        provider: PaymentProvider.PAYSTACK,
+        reference: intentExist.reference,
+        providerReference: intentExist.providerReference,
+        paymentUrl: intentExist.authorizationUrl,
+      };
+
+      return input;
+    }
+
+    await this.paymentRepository.deleteIncompletePendingPayments(
+      data.userId,
+      data.planId,
+    );
+
     const createIntent = await this.paymentRepository.createPaymentIntent(
       provider,
       data,
@@ -59,7 +87,7 @@ export class PaymentService {
         amount: data.amount * 100,
         ref: createIntent.reference,
         userId: data.userId.toString(),
-        paymentId: data.paymentId.toString(),
+        paymentId: createIntent._id.toString(),
         planId: data.planId.toString(),
         type: WebhookProcessionTransactionType.subscription_payment,
       },
@@ -71,7 +99,6 @@ export class PaymentService {
       providerResponse.providerReference,
     );
 
-    // console.log('service providerResponse:', providerResponse);
     return providerResponse;
   }
 

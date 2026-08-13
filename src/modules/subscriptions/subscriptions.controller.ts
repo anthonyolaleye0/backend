@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { GetCurrentUser } from '../../common/decorators/get-current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -14,6 +22,21 @@ export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
   // Public/Authenticated: Get available plans
+  @Post('subscribe-to-plan/:planId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  async subscribeToPlan(
+    @Param('planId') planId: string,
+    @GetCurrentUser() user: JwtUser,
+  ) {
+    console.log('planId:', planId);
+    const response = await this.subscriptionsService.subscribeToPlan(
+      user,
+      planId,
+    );
+
+    return response;
+  }
   @Get('get-plans')
   async getPlans() {
     const response = await this.subscriptionsService.getAllActivePlans();

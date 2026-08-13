@@ -27,6 +27,8 @@ export class PaystackService implements IPaymentProvider {
       ref,
       metadata: payload,
     };
+
+    console.log('dataToSend:', dataToSend);
     const response = await axios.post(
       `${this.baseUrl}/transaction/initialize`,
       dataToSend,

@@ -6,7 +6,7 @@ export const DEFAULT_PLANS = [
     tier: PlanTier.BASIC,
     name: 'Basic Plan',
     description: 'Essential access to tax laws and daily tips.',
-    amountInKobo: 15000, // ₦15,000 / year
+    amount: 15000, // ₦15,000 / year
     durationInDays: 365,
     allowedFeatures: [FeatureKey.DAILY_TIPS, FeatureKey.BASIC_SEARCH],
     isActive: true,
@@ -15,7 +15,7 @@ export const DEFAULT_PLANS = [
     tier: PlanTier.PREMIUM,
     name: 'Premium Plan',
     description: 'Includes decided cases, advanced search, and PDF exports.',
-    amountInKobo: 35000, // ₦35,000 / year
+    amount: 35000, // ₦35,000 / year
     durationInDays: 365,
     allowedFeatures: [
       FeatureKey.DAILY_TIPS,
@@ -30,7 +30,7 @@ export const DEFAULT_PLANS = [
     tier: PlanTier.SUPER,
     name: 'Super Plan',
     description: 'Full unrestricted access to all tax tools and calculators.',
-    amountInKobo: 75000, // ₦75,000 / year
+    amount: 75000, // ₦75,000 / year
     durationInDays: 365,
     allowedFeatures: [
       FeatureKey.DAILY_TIPS,

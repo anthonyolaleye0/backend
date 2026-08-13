@@ -1,9 +1,15 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
+import { JwtUser } from '../../common/types/jwt-user.type';
+import { PaymentProvider } from '../payment/enums/payment-provider.enum';
+import { PaymentService } from '../payment/payment.service';
+import { UsersService } from '../users/users.service';
 import { UpdatePlanDto } from './dtos/update-plan.dto';
 import { FeatureKey } from './enums/feature.enum';
 import { PlanTier } from './enums/plan-name.enum';
@@ -17,6 +23,10 @@ export class SubscriptionsService {
   constructor(
     private readonly planRepository: SubscriptionPlanRepository,
     private readonly userSubRepository: UserSubscriptionRepository,
+    private readonly usersService: UsersService,
+
+    @Inject(forwardRef(() => PaymentService))
+    private readonly paymentsService: PaymentService,
   ) {}
 
   async getAllActivePlans(): Promise<SubscriptionPlan[]> {
@@ -33,6 +43,40 @@ export class SubscriptionsService {
       return { hasActiveSubscription: false, subscription: null };
     }
     return { hasActiveSubscription: true, subscription: activeSub };
+  }
+  async subscribeToPlan(user: JwtUser, planId: string) {
+    console.log('user:', user);
+    console.log('planId:', planId);
+
+    const userExist = await this.usersService.findUserById(user.sub.toString());
+
+    console.log('userExist:', userExist);
+
+    const plan = await this.planRepository.findById(planId);
+
+    if (!plan) {
+      throw new NotFoundException({
+        message: 'Plan not found.',
+        success: false,
+        status: 404,
+      });
+    }
+
+    const payload = {
+      planId: plan._id,
+      email: userExist.email,
+      amount: plan.amount,
+      userId: userExist._id,
+    };
+
+    const provider = PaymentProvider.PAYSTACK;
+
+    const paymentIntent = await this.paymentsService.createPaymentIntent(
+      provider,
+      payload,
+    );
+
+    return paymentIntent;
   }
   async getUserActiveSubscription(userId: string) {
     const activeSub = await this.userSubRepository.findActiveByUserId(userId);

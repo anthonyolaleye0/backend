@@ -1,5 +1,7 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { PaymentModule } from '../payment/payment.module';
+import { UsersModule } from '../users/users.module';
 import { FeatureAccessGuard } from './guards/feature-access.guard';
 import { SubscriptionPlanRepository } from './repositories/subscription-plan.repository';
 import { UserSubscriptionRepository } from './repositories/user-subscription.repository';
@@ -21,6 +23,8 @@ import { SubscriptionsService } from './subscriptions.service';
       { name: SubscriptionPlan.name, schema: SubscriptionPlanSchema },
       { name: UserSubscription.name, schema: UserSubscriptionSchema },
     ]),
+    forwardRef(() => PaymentModule),
+    UsersModule,
   ],
   controllers: [SubscriptionsController],
   providers: [
